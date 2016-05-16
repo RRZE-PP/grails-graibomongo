@@ -1,0 +1,14 @@
+
+# these files should be ignored according to grails.org/wiki
+web-app/WEB-INF
+target
+.classpath
+.project
+.settings
+target-eclipse
+
+# these files have been migrated from svn
+/*.zip
+/*.sha1
+
+/build
