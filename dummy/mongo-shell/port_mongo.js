@@ -62,6 +62,8 @@ Mongo.prototype.cursorFromId = function(ns, cursorId, batchSize){
 
 	if(typeof cursorId === "number")
 		cursorId = NumberLong(cursorId);
+    	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
+    	//(cursorID kann schon kaputt sein!)
 
 	var cursor = new Cursor(ns, cursorId, 0, 0);
 
@@ -71,10 +73,12 @@ Mongo.prototype.cursorFromId = function(ns, cursorId, batchSize){
 	return cursor;
 }
 
-Mongo.prototype.find = function(ns, query, fields, limit, skip, batchSize, options) {
-	print("====FIND")
-	print(arguments);
-	print(query.toString());
-	print(DBQuery.prototype.toString.apply(query))
-	throw Error("find not implemented");
+Mongo.prototype.find = function(ns, query, fields, nToReturn, nToSkip, batchSize, options) {
+   	assert(arguments.length === 7, "find needs 7 args");
+   	assert(typeof arguments[1] === "object", "needs to be an object");
+
+	var cursor = new Cursor(ns, query, nToReturn, nToSkip, fields, options, batchSize);
+	//init is normally called from the connection, which we don't have
+	cursor.init();
+	return cursor;
 };
