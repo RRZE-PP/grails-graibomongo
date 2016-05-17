@@ -1,3 +1,4 @@
+.gradle/
 
 # these files should be ignored according to grails.org/wiki
 web-app/WEB-INF
