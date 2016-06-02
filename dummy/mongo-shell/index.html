@@ -21,6 +21,10 @@
 	function print(){
 		console.log.apply(console, arguments);
 	}
+
+	Object.bsonsize = function(){
+		BSON.calculateObjectSize.apply(this, arguments);
+	}
 	</script>
 
 	<script type="text/javascript" src="assert.js"></script>

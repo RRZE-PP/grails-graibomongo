@@ -1,6 +1,16 @@
 Mongo.prototype.init = function(host) {
 	console.log("test")
+
+	this._writeMode = "compatability"; //Disable sending update, insert and remove via command
 };
+
+Mongo.prototype.getMinWireVersion = function(){
+	return 0;
+}
+
+Mongo.prototype.getMaxWireVersion = function(){
+	return 10;
+}
 
 Mongo.prototype.runCommand = function(database, cmdObj, options){
 	print("====RUNCOMMAND")
@@ -81,4 +91,35 @@ Mongo.prototype.find = function(ns, query, fields, nToReturn, nToSkip, batchSize
 	//init is normally called from the connection, which we don't have
 	cursor.init();
 	return cursor;
+};
+
+
+Mongo.prototype.update = function(ns, query, obj, upsert) {
+    assert(arguments.length >= 3, "update needs at least 3 args");
+    assert(typeof arguments[1] === "object", "1st param to update has to be an object");
+    assert(typeof arguments[2] === "object", "2nd param to update has to be an object");
+
+    assert(this.readOnly !== true, "js db in read only mode");
+
+    //normally data is wrapped in a bson object and directly sent over the connection,
+    //we send to an AJAX endpoint
+
+    var toSend = {
+    	ns: ns,
+    	query: JSON.stringify(query),
+    	obj: JSON.stringify(obj),
+    	upsert: arguments.length > 3 && arguments[3] === true,
+    	multi: arguments.length > 4 && arguments[4] === true
+    }
+
+    foobar = toSend;
+
+    $.ajax("http://faui00q:8080/shell/update", {
+                async: false,
+                data: toSend
+            })
+            .fail(function(jqXHR, textStatus, errorThrown){
+                throw Error("update failed, due to an AJAX error: " + textStatus);
+            });
+
 };

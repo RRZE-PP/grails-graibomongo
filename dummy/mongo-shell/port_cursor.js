@@ -6,6 +6,10 @@ var inheritsFrom = function (child, parent) {
     child.prototype = Object.create(parent.prototype);
 };
 
+
+/* in the mongo source code, "client" means "database". */
+var MaxDatabaseNameLen = 128 - 1;  // 128 = max str len for the db name, including null char
+
 /**
  * foo = true
  * foo. = false
@@ -19,6 +23,18 @@ function nsIsFull(ns){
 // "database.a.b.c" -> "a.b.c"
 function nsToCollectionSubstring(ns){
 	return ns.split(".").slice(1).join(".");
+}
+
+// "database.a.b.c" -> "database"
+function nsToDatabaseSubstring(ns) {
+    var tmp = ns.split(".");
+    if(tmp.length == 1){
+        assert(ns.length < MaxDatabaseNameLen, "nsToDatabase: db too long");
+        return ns;
+    }
+    assert(tmp[0].length < MaxDatabaseNameLen, "nsToDatabase: db too long");
+
+    return tmp[0];
 }
 
 var ResultFlagType = {
@@ -396,3 +412,5 @@ Cursor.prototype.readOnly = function(){
 
     return this;
 }
+
+Cursor.prototype.hasNext = DBClientCursor.prototype.more;
