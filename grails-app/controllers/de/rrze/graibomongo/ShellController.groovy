@@ -85,7 +85,7 @@ class ShellController {
 		render([nReturned: data.size(),
 				data: data,
 				resultFlags: 0,
-				cursorId: cursorId  as JSON)
+				cursorId: cursorId]  as JSON)
 	}
 
 	def requestMore(){
