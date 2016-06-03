@@ -48,7 +48,6 @@ class ShellController {
 
 		println "===== COMMAND ===="
 		println params as JSON
-		println params.boolean("multi")
 		println result as JSON
 		println "====="
 
@@ -62,8 +61,12 @@ class ShellController {
 		def iterable = mc.getDatabase("test").getCollection("foobar").find(query)//TODO: Handle other options
 		def cursor = iterable.iterator()
 
+		def nToReturn = params.int('nToReturn');
+		if(nToReturn == 0)
+			nToReturn = 20;
+
 		def data = []
-		for(int i=0; i<params.int('nToReturn'); i++){
+		for(int i=0; i<nToReturn; i++){
 			def item = cursor.tryNext()
 			if(item != null){
 				data.push(item)
@@ -74,13 +77,16 @@ class ShellController {
 
 		//TODO: Handle all iterated
 		def scursor = cursor.getServerCursor()
-		if(scursor != null)
-			cursors[scursor.getId()] = cursor
+		def cursorId = 0;
+		if(scursor != null){
+			cursorId = scursor?.getId();
+			cursors[cursorId] = cursor
+		}
 
 		render([nReturned: data.size(),
 				data: data,
 				resultFlags: 0,
-				cursorId: scursor.getId()] as JSON)
+				cursorId: cursorId  as JSON)
 	}
 
 	def requestMore(){
