@@ -246,7 +246,7 @@ DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ ho
         // cursor id no longer valid at the server.
 
         if (!(this.opts & QueryOptions.QueryOption_CursorTailable)) {
-            throw Error( "cursor id " + cursorId + " didn't exist on server.");
+            throw Error( "cursor id " + this.cursorId + " didn't exist on server.");
         }
 
         // 0 indicates no longer valid (dead)
