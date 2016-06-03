@@ -26,6 +26,10 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
 		.done(function(data){
 			result = data;
 		});
+
+	if(result === null)
+		throw new Error("An error occured when running the command");
+
 	return result;
 
 	print("Normally would send to server. For development returning a listCollections result");
