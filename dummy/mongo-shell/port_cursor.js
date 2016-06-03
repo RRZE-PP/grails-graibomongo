@@ -159,6 +159,29 @@ DBClientCursor = function(///*DBClientBase* */ client,
     };
 }
 
+
+DBClientCursor.prototype.assembleCommandRequest = function(/*BClientWithCommands* */ cli,
+                               /*StringData*/ database,
+                               /*int*/ legacyQueryOptions,
+                               /*BSONObj*/ legacyQuery) {
+
+    window.foobar = arguments;
+
+    var upconvertedCommand = {};
+    var upconvertedMetadata = {};
+
+    var tuple = rpc.upconvertRequestMetadata(legacyQuery, legacyQueryOptions);
+    upconvertedCommand = tuple[0];
+    upconvertedMetadata = tuple[1];
+
+    return {
+        database: database,
+        commandName: keys(upconvertedCommand)[0],
+        commandArgs: upconvertedCommand, //this is stringified later in runCommand
+        metadata: upconvertedMetadata
+    }
+}
+
 DBClientCursor.prototype.assembleQueryRequest = function(/*const string& */ns,
                           /*BSONObj*/ query,
                           /*int*/ nToReturn,
@@ -191,9 +214,7 @@ DBClientCursor.prototype._assembleInit = function() {
         var hasValidFlagsForCommand = !(this.opts & QueryOptions.QueryOption_Exhaust);
 
         if (this._isCommand && hasValidNToReturnForCommand && hasValidFlagsForCommand) {
-            throw Error("Sending command Requests is not yet implemented");
-            toSend = this.assembleCommandRequest(_client, nsToDatabaseSubstring(ns), opts, query);
-            return;
+            return this.assembleCommandRequest(this._client, nsToDatabaseSubstring(this.ns), this.opts, this.query);
         }
         return this.assembleQueryRequest(this.ns, this.query, this.nextBatchSize(), this.nToSkip, this.fieldsToReturn, this.opts, this.toSend);
     }
@@ -210,8 +231,7 @@ DBClientCursor.prototype._assembleInit = function() {
 DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ host) {
     // If this is a reply to our initial command request.
     if (this._isCommand && this.cursorId == 0) {
-        throw Error("Receiving command data has not yet been implemented");
-        commandDataReceived();
+        this.commandDataReceived();
         return;
     }
 
@@ -255,8 +275,35 @@ DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ ho
     }
 }
 
+DBClientCursor.prototype.commandDataReceived = function() {
+    // var op = this.batch.m.operation();
+    // assert(op == opReply || op == dbCommandReply);
+
+    this.batch.nReturned = 1;
+    this.batch.pos = 0;
+    window.foobar = this.batch
+
+    var commandReply = this.batch.m;
+
+    if(commandReply.ok == ErrorCodes.SendStaleConfig){
+        throw new Error("stale config in DBClientCursor::dataReceived()" + JSON.stringify(commandReply))
+    }
+
+    if(!commandReply.ok){
+        this.wasError = true;
+    }
+
+    this.batch.data = [this.batch.m]
+}
+
 DBClientCursor.prototype.init = function(){
     var toSend = this._assembleInit();
+
+    if(this._isCommand){
+        this.batch.m = Mongo.prototype.runCommand(nsToDatabaseSubstring(this.ns), toSend.commandArgs, this.opts);
+        this.dataReceived();
+        return;
+    }
 
     var self = this;
     $.ajax("http://localhost:8080/shell/initCursor", {
@@ -301,9 +348,9 @@ DBClientCursor.prototype.next = function(){
 
     assert(this.batch.pos < this.batch.nReturned, "DBClientCursor next() called but more() is false");
 
-    throw Error("Not completely implemented yet");
+    // throw Error("Not completely implemented yet");
 
-    this.batch.pos++;
+    return this.batch.data[this.batch.pos++];
 
     // BSONObj o(batch.data);
     // batch.data += o.objsize();
@@ -324,7 +371,6 @@ DBClientCursor.prototype.requestMore = function(){
     // console.warn("WARNING: Request more is not implemented yet but cannot throw because it's (unnecessarily?) used!")
     // return;
 
-    // throw Error("Not completely implemented yet");
 
     /*
     BufBuilder b;

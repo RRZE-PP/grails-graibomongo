@@ -1,7 +1,7 @@
 Mongo.prototype.init = function(host) {
 	console.log("test")
 
-	this._writeMode = "compatability"; //Disable sending update, insert and remove via command
+	//this._writeMode = "compatability"; //Disable sending update, insert and remove via command
 };
 
 Mongo.prototype.getMinWireVersion = function(){
@@ -93,33 +93,46 @@ Mongo.prototype.find = function(ns, query, fields, nToReturn, nToSkip, batchSize
 	return cursor;
 };
 
+Mongo.prototype.insert = function(ns, obj) {
+	console.log(arguments);
+    throw Error("insert not implemented");
+};
+
+Mongo.prototype.remove = function(ns, pattern) {
+	console.log(arguments);
+    throw Error("remove not implemented");
+};
 
 Mongo.prototype.update = function(ns, query, obj, upsert) {
-    assert(arguments.length >= 3, "update needs at least 3 args");
-    assert(typeof arguments[1] === "object", "1st param to update has to be an object");
-    assert(typeof arguments[2] === "object", "2nd param to update has to be an object");
+	console.log(arguments);
+	throw Error("non-command mode not implemented on server-side");
 
-    assert(this.readOnly !== true, "js db in read only mode");
+	// below code should work, though:
+    // assert(arguments.length >= 3, "update needs at least 3 args");
+    // assert(typeof arguments[1] === "object", "1st param to update has to be an object");
+    // assert(typeof arguments[2] === "object", "2nd param to update has to be an object");
 
-    //normally data is wrapped in a bson object and directly sent over the connection,
-    //we send to an AJAX endpoint
+    // assert(this.readOnly !== true, "js db in read only mode");
 
-    var toSend = {
-    	ns: ns,
-    	query: JSON.stringify(query),
-    	obj: JSON.stringify(obj),
-    	upsert: arguments.length > 3 && arguments[3] === true,
-    	multi: arguments.length > 4 && arguments[4] === true
-    }
+    // //normally data is wrapped in a bson object and directly sent over the connection,
+    // //we send to an AJAX endpoint
 
-    foobar = toSend;
+    // var toSend = {
+    // 	ns: ns,
+    // 	query: JSON.stringify(query),
+    // 	obj: JSON.stringify(obj),
+    // 	upsert: arguments.length > 3 && arguments[3] === true,
+    // 	multi: arguments.length > 4 && arguments[4] === true
+    // }
 
-    $.ajax("http://faui00q:8080/shell/update", {
-                async: false,
-                data: toSend
-            })
-            .fail(function(jqXHR, textStatus, errorThrown){
-                throw Error("update failed, due to an AJAX error: " + textStatus);
-            });
+    // foobar = toSend;
+
+    // $.ajax("http://localhost:8080/shell/update", {
+    //             async: false,
+    //             data: toSend
+    //         })
+    //         .fail(function(jqXHR, textStatus, errorThrown){
+    //             throw Error("update failed, due to an AJAX error: " + textStatus);
+    //         });
 
 };
