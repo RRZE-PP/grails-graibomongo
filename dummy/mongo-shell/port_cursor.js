@@ -406,13 +406,28 @@ DBClientCursor.prototype.requestMore = function(){
         assert(this.nToReturn > 0);
     }
 
-    $.post("localhost:8080/requestMore")
+    var toSend = {
+        opts: this.opts,
+        ns: this.ns,
+        nToReturn: this.nextBatchSize(),
+        cursorId: this.cursorId
+    }
 
-    print("Reqesting more data. Available to do so:");
-    print("     opts:", this.opts);
-    print("     ns:", this.ns);
-    print("     nextBatchSize():", this.nextBatchSize());
-    print("     cursorId:", this.cursorId);
+    var self = this;
+    $.ajax("http://localhost:8080/shell/requestMore", {
+                async: false,
+                data: toSend
+            })
+            .done(function(data){
+                self.batch.m = data;
+                if(typeof data !== "object" || data === {}){
+                    throw Error("DBClientCursor::init message from call() was empty or invalid");
+                }
+                self.dataReceived();
+            })
+            .fail(function(){
+                throw Error("DBClientCursor::init failed");
+            });
 }
 
 
