@@ -50,8 +50,7 @@ class ShellController {
 		println params as JSON
 		println result as JSON
 		println "====="
-
-		render ""
+		render result as JSON
 	}
 
 	def initCursor(){
