@@ -344,7 +344,7 @@ DBClientCursor.prototype.more = function (){
     if (this.batch.pos < this.batch.nReturned)
         return true;
 
-    if (this.cursorId === 0)
+    if (this.cursorId === 0 || (this.cursorId instanceof NumberLong && this.cursorId.isZero()))
         return false;
 
     this.requestMore();
