@@ -1,5 +1,11 @@
 Mongo.prototype.init = function(host) {
-	console.log("test")
+	this.host = "127.0.0.1";
+
+	if(typeof host !== "undefined")
+		this.host = host;
+
+	this.slaveOk = false;
+	this.defaultDB = host.split("/").splice(1).join("/")
 
 	//this._writeMode = "compatability"; //Disable sending update, insert and remove via command
 };
@@ -19,9 +25,11 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
 	assert(typeof options === "number", "the options parameter to runCommand must be a number");
 
 	var result = null;
-	$.ajax("http://localhost:8080/shell/runCommand", {
+	$.ajax("/shell/runCommand", {
 			async: false,
-			data: {database: database, command: JSON.stringify(cmdObj), options: options}
+			data: JSON.stringify({database: database, command: JSON.stringify(cmdObj), options: options, connection: this.getConnectionData()}),
+            method: "POST",
+            contentType: "application/json; charset=utf-8"
 		})
 		.done(function(data){
 			result = data;
@@ -79,7 +87,7 @@ Mongo.prototype.cursorFromId = function(ns, cursorId, batchSize){
     	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
     	//(cursorID kann schon kaputt sein!)
 
-	var cursor = new Cursor(ns, cursorId, 0, 0);
+	var cursor = new Cursor(ns, cursorId, 0, 0, this.getConnectionData());
 
 	if(typeof batchSize !== "undefined")
 		cursor.setBatchSize(batchSize);
@@ -91,7 +99,7 @@ Mongo.prototype.find = function(ns, query, fields, nToReturn, nToSkip, batchSize
    	assert(arguments.length === 7, "find needs 7 args");
    	assert(typeof arguments[1] === "object", "needs to be an object");
 
-	var cursor = new Cursor(ns, query, nToReturn, nToSkip, fields, options, batchSize);
+	var cursor = new Cursor(ns, query, nToReturn, nToSkip, fields, options, batchSize, this.getConnectionData());
 	//init is normally called from the connection, which we don't have
 	cursor.init();
 	return cursor;
@@ -140,3 +148,50 @@ Mongo.prototype.update = function(ns, query, obj, upsert) {
     //         });
 
 };
+
+function simple_connect(hostname, port, database, user, password, authDatabase, authMethod){
+	if(arguments.length < 3)
+		throw Error("Hostname, port and database are required");
+
+	if(typeof hostname !== "string")
+		throw Error("Hostname must be a string");
+
+	if(typeof port !== "number")
+		throw Error("Port must be a number");
+
+	if(typeof database !== "string")
+		throw Error("Database must be a string")
+
+	var mongo = new Mongo(hostname+":"+port+"/"+database);
+
+
+	if(user && !password)
+		throw Error("You specified a user, but no password");
+
+	function isDefined(val, defVal){
+		return typeof val === "undefined" ? defVal : val;
+	}
+
+	mongo.connectionData = {
+		hostname: hostname,
+		port: port,
+		auth: {
+			user: isDefined(user, null),
+			password: isDefined(password, null),
+
+			database: isDefined(database, null),
+			mechanism: isDefined(database, null),
+		}
+	}
+
+
+	return mongo.getDB(database);
+}
+
+
+Mongo.prototype.getConnectionData = function(){
+	if(typeof this.connectionData === "undefined")
+		throw Error("Was not connected using simple_connect");
+
+	return this.connectionData;
+}

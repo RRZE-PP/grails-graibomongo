@@ -28,6 +28,72 @@ class ResultFlagType {
     static ResultFlag_AwaitCapable = 8
 };
 
+class AuthData  implements grails.validation.Validateable {
+	String user;
+	String password;
+
+	String authDatabase;
+	String authMechanism;
+
+	static constraints = {
+		authDatabase(nullable: true)
+		authMechanism(nullable: true)
+	}
+}
+
+class ConnectionData implements grails.validation.Validateable {
+	String hostname;
+	Integer port;
+
+	AuthData auth;
+
+    def beforeValidate() {
+        hostname = hostname ?: '127.0.0.1'
+        port = port ?: 27017
+    }
+
+	String toString(){
+		return auth?.user + ":" + auth?.password + "@" + hostname + ":" + port;
+	}
+
+	static constraints = {
+		auth(nullable:true)
+	}
+}
+
+class CommandRequest implements grails.validation.Validateable {
+	ConnectionData connection;
+
+	String database;
+	String command;
+
+	String toString(){
+		return "DB[" + database + "].runCommand(" + command + ")";
+	}
+}
+
+class CursorInitRequest implements grails.validation.Validateable {
+	ConnectionData connection;
+
+	String query;
+	String ns;
+	Long nToReturn;
+
+	String toString(){
+		return ns + ".find(" + query + ").get(" + nToReturn + ")";
+	}
+}
+
+class RequestMoreRequest implements grails.validation.Validateable {
+	ConnectionData connection;
+
+	Long cursorId;
+	Long nToReturn;
+
+	String toString(){
+		return "Cursor(" + cursorId + ").get(" + nToReturn + ")";
+	}
+}
 
 class ShellController {
 
@@ -37,30 +103,54 @@ class ShellController {
     	render "some text"
     }
 
-	def runCommand(){
+	def runCommand(CommandRequest request){
+		println "=== RunCommand ==="
+		if(request.hasErrors()){
+			println "   Error"
+			print "    "; println request
+			print "    "; println request?.connection
+			response.status = 422
+			render([error: 'Invalid command sent'] as JSON)
+			return
+		}
 
-		println params as JSON
-		MongoClient mc = new MongoClient()
-    	Jongo jong = new Jongo(mc.getDB("test"))
+		def conn = request.connection
+
+		//TODO: auth
+		//TODO: Verbindungsfehler abfangen
+		MongoClient mc = new MongoClient(conn.hostname, conn.port);
+    	Jongo jong = new Jongo(mc.getDB(request.database))
     	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
 
-		def result = jong.runCommand(params.command).map(new RawResultHandler());
+    	//TODO: JSON-parse-fehler in request.command abfangen
+		def result = jong.runCommand(request.command).map(new RawResultHandler());
 
-		println "===== COMMAND ===="
-		println params as JSON
-		println result as JSON
-		println "====="
 		render result as JSON
 	}
 
-	def initCursor(){
-		def query = new BsonQueryFactory(new JacksonEngine(Mapping.defaultMapping())).createQuery(params.query).toDBObject()
+	def initCursor(CursorInitRequest request){
+		println "=== InitCursor ==="
+		if(request.hasErrors()){
+			println "   Error"
+			print "    "; println request
+			print "    "; println request?.connection
+			response.status = 422
+			render([error: 'Invalid command sent'] as JSON)
+			return
+		}
 
-		MongoClient mc = new MongoClient()
-		def iterable = mc.getDatabase("test").getCollection("foobar").find(query)//TODO: Handle other options
+		def conn = request.connection
+
+		MongoClient mc = new MongoClient(conn.hostname, conn.port);
+
+		def database = request.ns.substring(0, request.ns.indexOf("."));
+		def collection = request.ns.substring(request.ns.indexOf(".")+1);
+
+		def query = new BsonQueryFactory(new JacksonEngine(Mapping.defaultMapping())).createQuery(request.query).toDBObject()
+		def iterable = mc.getDatabase(database).getCollection(collection).find(query)//TODO: Handle other options
 		def cursor = iterable.iterator()
 
-		def nToReturn = params.int('nToReturn');
+		def nToReturn = request.nToReturn;
 		if(nToReturn == 0)
 			nToReturn = 20;
 
@@ -79,30 +169,38 @@ class ShellController {
 		def cursorId = 0;
 		if(scursor != null){
 			cursorId = scursor?.getId();
-			cursors[cursorId] = cursor
+			cursors[conn.hostname + conn.port + cursorId] = cursor
 		}
 
 		render([nReturned: data.size(),
 				data: data,
 				resultFlags: 0,
 				cursorId: cursorId]  as JSON)
+
 	}
 
-	def requestMore(){
-		println "===== requestMore ===="
-		println params
-		println cursors
-		def cursorId = params.long('cursorId');
-		println cursorId
-		println cursorId in cursors
-		println "====="
+	def requestMore(RequestMoreRequest request){
+		println "=== RequestMore ==="
+		if(request.hasErrors()){
+			println "   Error"
+			print "    "; println request
+			print "    "; println request?.connection
+			response.status = 422
+			render([error: 'Invalid command sent'] as JSON)
+			return
+		}
 
-		def nToReturn = params.int('nToReturn');
+		def conn = request.connection
+
+		def cursorId = request.cursorId
+		def cursorKey = conn.hostname + conn.port + cursorId
+
+		def nToReturn = request.nToReturn
 		if(nToReturn == 0)
 			nToReturn = 20;
 
-		if(cursorId in cursors){
-			def cursor = cursors[cursorId];
+		if(cursorKey in cursors){
+			def cursor = cursors[cursorKey];
 
 			def data = []
 			for(int i=0; i<nToReturn; i++){
@@ -115,7 +213,7 @@ class ShellController {
 			}
 
 			if(cursor.getServerCursor() == null){
-				cursors.remove(cursorId);
+				cursors.remove(cursorKey);
 				cursorId = 0;
 			}
 

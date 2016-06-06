@@ -131,7 +131,8 @@ DBClientCursor = function(///*DBClientBase* */ client,
                    /*int*/ nToSkip,
                    /*const BSONObj* */ fieldsToReturn,
                    /*int*/ queryOptions,
-                   /*int*/ batchSize)
+                   /*int*/ batchSize,
+                   connection)//this is our "client": the information for the server which mongodb to connect to when forwarding
 {
     this._client = null;
     this._originalHost = null; //(_client->getServerAddress());
@@ -157,6 +158,8 @@ DBClientCursor = function(///*DBClientBase* */ client,
         data: null, //TODO
         m: null //message //TODO
     };
+
+    this.connection = connection;
 }
 
 
@@ -300,15 +303,23 @@ DBClientCursor.prototype.init = function(){
     var toSend = this._assembleInit();
 
     if(this._isCommand){
-        this.batch.m = Mongo.prototype.runCommand(nsToDatabaseSubstring(this.ns), toSend.commandArgs, this.opts);
+        //hack to reuse the code from runCommand
+        this.batch.m = Mongo.prototype.runCommand.call(
+                            { connectionData: this.connection, getConnectionData: Mongo.prototype.getConnectionData },
+                            nsToDatabaseSubstring(this.ns), toSend.commandArgs, this.opts);
         this.dataReceived();
         return;
     }
 
+    toSend.connection = this.connection;
+
     var self = this;
-    $.ajax("http://localhost:8080/shell/initCursor", {
+    //TODO: Refactor this into port_client.js
+    $.ajax("/shell/initCursor", {
                 async: false,
-                data: toSend
+                data: JSON.stringify(toSend),
+                method: "POST",
+                contentType: "application/json; charset=utf-8"
             })
             .done(function(data){
                 self.batch.m = data;
@@ -413,10 +424,14 @@ DBClientCursor.prototype.requestMore = function(){
         cursorId: this.cursorId
     }
 
+    toSend.connection = this.connection;
+
     var self = this;
-    $.ajax("http://localhost:8080/shell/requestMore", {
+    $.ajax("/shell/requestMore", {
                 async: false,
-                data: toSend
+                data: JSON.stringify(toSend),
+                method: "POST",
+                contentType: "application/json; charset=utf-8"
             })
             .done(function(data){
                 self.batch.m = data;
@@ -447,19 +462,19 @@ DBClientCursor.prototype.nextBatchSize = function() {
  * Cursor is our port of the wrapper around DBClientCursor (mozjs/cursor.h)
  */
 Cursor = function(){
-    if(arguments.length == 4)
-        return Cursor.fourArgsConstructor.apply(this, arguments);
-    if(arguments.length == 7)
-        return Cursor.sevenArgsConstructor.apply(this, arguments);
+    if(arguments.length == 5)
+        return Cursor.fiveArgsConstructor.apply(this, arguments);
+    if(arguments.length == 8)
+        return Cursor.eightArgsConstructor.apply(this, arguments);
     return DBClientCursor.apply(this, arguments);
 }
 
-Cursor.sevenArgsConstructor = function(ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize){
-    return DBClientCursor.call(this, ns, query, 0 /*cursorId*/, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
+Cursor.eightArgsConstructor = function(ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize, connection){
+    return DBClientCursor.call(this, ns, query, 0 /*cursorId*/, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize, connection);
 }
 
-Cursor.fourArgsConstructor = function(ns, cursorId, nToReturn, queryOptions){
-    return DBClientCursor.call(this, ns, {} /*query*/, cursorId, nToReturn, 0 /*nToSkip*/, null /*fieldsToReturn*/, queryOptions, 0 /*batchSize*/);
+Cursor.fiveArgsConstructor = function(ns, cursorId, nToReturn, queryOptions, connection){
+    return DBClientCursor.call(this, ns, {} /*query*/, cursorId, nToReturn, 0 /*nToSkip*/, null /*fieldsToReturn*/, queryOptions, 0 /*batchSize*/, connection);
 }
 
 inheritsFrom(Cursor, DBClientCursor);
