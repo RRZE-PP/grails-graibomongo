@@ -179,7 +179,7 @@ DBClientCursor.prototype.assembleCommandRequest = function(/*BClientWithCommands
 
     return {
         database: database,
-        commandName: keys(upconvertedCommand)[0],
+        commandName: Object.keys(upconvertedCommand)[0],
         commandArgs: upconvertedCommand, //this is stringified later in runCommand
         metadata: upconvertedMetadata
     }

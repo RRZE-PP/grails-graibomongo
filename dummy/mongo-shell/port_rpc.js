@@ -23,8 +23,8 @@ window.rpc = (function(){
 
 		/* add all the fields from the object specified to this object */
 		function appendElements(appendTo, appendFrom){
-			for(var i=0; i<keys(appendFrom).length; i++){
-				appendTo[keys(appendFrom)[i]] = appendFrom[keys(appendFrom)[i]];
+			for(var i=0; i<Object.keys(appendFrom).length; i++){
+				appendTo[Object.keys(appendFrom)[i]] = appendFrom[Object.keys(appendFrom)[i]];
 			}
 		}
 
@@ -52,9 +52,9 @@ window.rpc = (function(){
 		    }
 
 		    // Write out the command excluding the $queryOptions field.
-			for(var i=0; i<keys(appendFrom).length; i++){
+			for(var i=0; i<Object.keys(appendFrom).length; i++){
 		        if (key != kQueryOptionsFieldName){
-					commandBob[keys(appendFrom)[i]] = unwrappedCommand[keys(appendFrom)[i]];
+					commandBob[Object.keys(appendFrom)[i]] = unwrappedCommand[Object.keys(appendFrom)[i]];
 				}
 			}
 
@@ -83,7 +83,7 @@ window.rpc = (function(){
 		 */
 		/*StatusWith<std::tuple<bool, BSONObj>>*/
 		function unwrapCommand(/*const BSONObj& */ maybeWrapped) {
-		    var firstElFieldName = keys(maybeWrapped)[0];
+		    var firstElFieldName = Object.keys(maybeWrapped)[0];
 
 		    if ((firstElFieldName != kDollarQueryWrapper) &&
 		        (firstElFieldName != kQueryWrapper)) {
@@ -145,8 +145,8 @@ window.rpc = (function(){
 	var AuditMetadata = (function(){
 		/* add all the fields from the object specified to this object */
 		function appendElements(appendTo, appendFrom){
-			for(var i=0; i<keys(appendFrom).length; i++){
-				appendTo[keys(appendFrom)[i]] = appendFrom[keys(appendFrom)[i]];
+			for(var i=0; i<Object.keys(appendFrom).length; i++){
+				appendTo[Object.keys(appendFrom)[i]] = appendFrom[Object.keys(appendFrom)[i]];
 			}
 		}
 
