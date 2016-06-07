@@ -179,6 +179,12 @@ window.rpc = (function(){
 		throw new Error("not implemented");
 	}
 
-	return {"upconvertRequestMetadata": upconvertRequestMetadata, makeReply: makeReply};
+	var rpc_obj = {"upconvertRequestMetadata": upconvertRequestMetadata, makeReply: makeReply};
+
+	if(window.__unittesting__){
+		rpc_obj.__unittesting__ = {AuditMetadata: AuditMetadata, ServerSelectionMetadata: ServerSelectionMetadata}
+	}
+
+	return rpc_obj;
 })();
 
