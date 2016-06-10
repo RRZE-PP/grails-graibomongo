@@ -9,24 +9,25 @@
 		<link rel="stylesheet" href="./jquery-ui-1.11.4.custom/jquery-ui.structure.min.css">
 		<script src="./jquery-2.2.3.min.js"></script>
 		<script src="./jquery-ui-1.11.4.custom/jquery-ui.min.js"></script>
-		<script src="./script.js"></script>
+		<!-- <script src="./script.js"></script> -->
+		<script src="./mongobrowser.js"></script>
 	</head>
 	<body>
 
-	<div style="width:1000px; border-radius:2px;padding:1px;border:2px solid #333;" id="container">
-		<div style="" id="menuBar">
+	<div style="width:1000px; border-radius:2px;padding:1px;border:2px solid #333; display:none" id="MongoBrowserDummy">
+		<div style="" class="menuBar">
 			<span>File</span> <span>Options</span> <span>Help</span>
 		</div>
-		<div style="display:flex; flex-direction:row;" id="actionBar">
-			<div id="connectionButton" class="dropDown button"><img src="images/connect_24x24.png" /></div>
+		<div style="display:flex; flex-direction:row;" class="actionBar">
+			<div class="connectionButton dropDown button"><img src="images/connect_24x24.png" /></div>
 			<div class="divider"></div>
-			<div id="executeButton" class="button active"><img src="images/execute_24x24.png" /></div>
-			<div id="stopButton" class="button inactive"><img src="images/stop_24x24.png" /></div>
-			<div id="rotateButton" class="button active"><img src="images/rotate_24x24.png" /></div>
+			<div class="executeButton button active"><img src="images/execute_24x24.png" /></div>
+			<div class="stopButton utton inactive"><img src="images/stop_24x24.png" /></div>
+			<div class="rotateButton button active"><img src="images/rotate_24x24.png" /></div>
 			&nbsp;
 		</div>
-		<div id="mainBody">
-			<div id="sideBar">
+		<div class="mainBody">
+			<div class="sideBar">
 				<ul>
 					<li class="server opened"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem">localhost</span>
 						<ul>
@@ -47,8 +48,8 @@
 					</li>
 				</ul>
 			</div>
-			<div id="tabContainer">
-				<ul id="tabList"><li><a href="#tab1"><img src="images/mongodb_16x16.png" /><span>db.events.find</span></a><span class="closeButton">✖</span></li><li><a href="#tab2"><img src="images/mongodb_16x16.png" /><span>t2</span></a><span class="closeButton">✖</span></li></ul>
+			<div class="tabContainer">
+				<ul class="tabList"><li><a href="#tab1"><img src="images/mongodb_16x16.png" /><span>db.events.find</span></a><span class="closeButton">✖</span></li><li><a href="#tab2"><img src="images/mongodb_16x16.png" /><span>t2</span></a><span class="closeButton">✖</span></li></ul>
 				<div id="tab1" class="tab">
 					<div class="promptContainer">
 						<span class="info">
@@ -134,30 +135,46 @@
 			</div>
 			<span style="clear:both"></span>
 		</div>
-		<div style="clear:both" id="statusBar">
+		<div style="clear:both" class="statusBar">
 			Graibomongo is not affiliated with <a href="https://robomongo">robomongo</a>. We simply love their application and tried to bring it to the web.
 		</div>
+
+		<div class="windowContainer" style="display:none">
+			<div class="connectionManager window modal" title="MongoDB Connections">
+				<a href="#" class="connectionCreateLink">Create</a>, <a href="#" class="connectionEditLink">edit</a>, <a href="#" class="connectionRemoveLink">remove</a>, <a href="#" class="connectionCloneLink">clone</a> or <s>reorder connections via drag'n'drop</s>.
+				<table class="connectionsTable">
+					<thead>
+						<tr>
+							<th>Name</th><th>Address</th><th>Auth. Database / User</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Testconnection</td><td>faui0sr0.cs.fau.de:27017</td><td></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
+			<div class="connectionSettings window modal" title="Connection settings">
+				<table class="alignmentHelper">
+					<tr><td>Name:</td> <td><input type="text" class="connectionName"> <br />Choose any connection name that will help you to identify this connection</td></tr>
+					<tr><td>&nbsp;</td><td></td></tr>
+					<tr><td>Address:</td><td><input type="text" class="connectionHost"> : <input type="number" value="27017" class="connectionPort" /> <br />Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name. <!--TODO: check if this is true with our grails client! --></td></tr>
+				</table>
+			</div>
+		</div>
 	</div>
 
-	<div id="windowContainer" style="display:none">
-		<div id="connectionManager" class="window modal" title="MongoDB Connections">
-			<a href="#">Create</a>, <a href="#">edit</a>, <a href="#">remove</a>, <a href="#">clone</a> or reorder connections via drag'n'drop.
-			<table id="connectionsTable">
-				<tr>
-					<th>Name</th><th>Address</th><th>Auth. Database / User</th>
-				</tr>
-					<td>Testconnection</td><td>faui0sr0.cs.fau.de:27017</td><td></td>
-				</tr>
-			</table>
-		</div>
-
-		<div id="connectionSettings" class="window modal" title="Connection settings">
-			<table class="alignmentHelper">
-				<tr><td>Name:</td> <td><input type="text"> <br />Choose any connection name that will help you to identify this connection</td></tr>
-				<tr><td>&nbsp;</td><td></td></tr>
-				<tr><td>Address:</td><td><input type="text"> : <input type="number" value="27017" id="portNumber" /> <br />Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name. <!--TODO: check if this is true with our grails client! --></td></tr>
-			</table>
-		</div>
-	</div>
+	<script>
+	m = MongoBrowser($("body")[0],
+		{connectionPresets: [ {name: "conn1",
+								 host: "faui00q",
+								  port: 1337},
+								{name: "conn2",
+								 host: "faui00q",
+								  port: 1337}]
+		})
+	</script>
 	</body>
 </html>

@@ -1,12 +1,7 @@
-* {
-	font-family: 'Roboto', 'Open Sans', sans-serif;
-	box-sizing:border-box;
-}
-
 /* menuBar
  */
 
-	#menuBar {
+	.mongoBrowser .menuBar {
 		background: -moz-linear-gradient(top, rgba(246,248,249,1) 0%, rgba(229,235,238,1) 34%, rgba(215,222,227,1) 36%, rgba(245,247,249,1) 100%);
 		background: -webkit-linear-gradient(top, rgba(246,248,249,1) 0%,rgba(229,235,238,1) 34%,rgba(215,222,227,1) 36%,rgba(245,247,249,1) 100%);
 		background: linear-gradient(to bottom, rgba(246,248,249,1) 0%,rgba(229,235,238,1) 34%,rgba(215,222,227,1) 36%,rgba(245,247,249,1) 100%);
@@ -16,7 +11,7 @@
 		padding:3px;
 	}
 
-	#menuBar > span {
+	.mongoBrowser .menuBar > span {
 		margin-right: 10px;
 	}
 
@@ -24,46 +19,47 @@
 /* actionBar
  */
 
-	#actionBar {
+	.mongoBrowser .actionBar {
 		background-color: #eee;
-		border-top:1px solid #fff	;
+		border-top:1px solid #fff;
 		padding:5px;
 		height:34px; /*needed for chrome and divider height*/
 		border-bottom: 1px solid #aaa;
 	}
 
-	#actionBar .dropDown {
+	.mongoBrowser .actionBar .dropDown {
 		display:flex;
 		align-items: center;
 	}
 
-	#actionBar .button, .button.active {
-		cursor:pointer;
+	.mongoBrowser .actionBar .button,
+	.mongoBrowser .actionBar .button.active {
+		cursor: pointer;
 		margin-left: 10px;
 	}
 
-	#actionBar .button:first-child{
+	.mongoBrowser .actionBar .button:first-child{
 		margin-left: 0px;
 	}
 
-	#actionBar .button.inactive {
+	.mongoBrowser .actionBar .button.inactive {
 		cursor:not-allowed;
 		filter: grayscale(1);
 		-webkit-filter: grayscale(1);
 	}
 
-	#actionBar .dropDown::after {
+	.mongoBrowser .actionBar .dropDown::after {
 		content: '▾';
 		font-size: 10px;
 		margin-left: 5px;
 	}
-	#actionBar .dropDown::after::after {
+	.mongoBrowser .actionBar .dropDown::after::after {
 		content: '▾';
 		font-size: 10px;
 		margin-left: 5px;
 	}
 
-	#actionBar .divider {
+	.mongoBrowser .actionBar .divider {
 
 		border-right: 1px solid white;
 		border-left: 1px solid #aaa;
@@ -77,7 +73,7 @@
 /* sideBar
  */
 
-	#sideBar {
+	.mongoBrowser .sideBar {
 		width: 230px;
 		float: left;
 		background-color:#f8f8f8;
@@ -89,45 +85,45 @@
 	}
 
 
-	#sideBar ul {
+	.mongoBrowser .sideBar ul {
 		padding-left:30px;
 		transition: height 2s;
 	}
 
-	#sideBar > ul {
+	.mongoBrowser .sideBar > ul {
 		padding-left:15px;
 	}
 
-	#sideBar li {
+	.mongoBrowser .sideBar li {
 		list-style: none;
 		padding:2px;
 		white-space: nowrap;
 	}
 
-	#sideBar li {
+	.mongoBrowser .sideBar li {
 		list-style: none;
 		padding:2px;
 		white-space: nowrap;
 	}
 
-	#sideBar li.selected {
+	.mongoBrowser .sideBar li.selected {
 		border: 1px solid #aaa;
 		background-color: #eee;
 		border-radius: 2px;
 	}
 
 
-	#sideBar li .foldIcon {
+	.mongoBrowser .sideBar li .foldIcon {
 		cursor:pointer;
 	}
 
-	#sideBar li.collapsed > .foldIcon::before {
+	.mongoBrowser .sideBar li.collapsed > .foldIcon::before {
 		content: '▹';
 		font-size:15px;
 	    float:left; /*do not affect line height*/
 	}
 
-	#sideBar li.opened > .foldIcon::before {
+	.mongoBrowser .sideBar li.opened > .foldIcon::before {
 		content: '◢';
 		font-size:10px;
 	    float:left; /*do not affect line height*/
@@ -135,14 +131,14 @@
 	    top:5px;
 	}
 
-	#sideBar li.collapsed > ul {
+	.mongoBrowser .sideBar li.collapsed > ul {
 		transform-origin:50% 0;
 		transform: scaleY(0);
 		-ms-transform: scaleY(0);
 		transition:transform 0.25s;
 	}
 
-	#sideBar li.opened > ul {
+	.mongoBrowser .sideBar li.opened > ul {
 		transform-origin:50% 0;
 		transform: scaleY(1);
 		-ms-transform: scaleY(1);
@@ -150,60 +146,60 @@
 	}
 
 
-	#sideBar li .icon {
+	.mongoBrowser .sideBar li .icon {
 		width:18px;
 		height:18px;
 		display:inline-block;
 	}
 
-	#sideBar li.server .icon {
+	.mongoBrowser .sideBar li.server .icon {
 		background: url(images/server_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
-	#sideBar li.database .icon{
+	.mongoBrowser .sideBar li.database .icon{
 		background: url(images/database_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
-	#sideBar li.folder .icon {
+	.mongoBrowser .sideBar li.folder .icon {
 		background: url(images/folder_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
-	#sideBar li.collection .icon {
+	.mongoBrowser .sideBar li.collection .icon {
 		background: url(images/collection_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
 
-	#sideBar li .listItem {
+	.mongoBrowser .sideBar li .listItem {
 		cursor: pointer;
 	}
 
-	#sideBar li .listItem:hover {
+	.mongoBrowser .sideBar li .listItem:hover {
 		font-weight: bold;
 	}
 
 
 /* Main Content
  */
-	#mainBody {
+	.mongoBrowser .mainBody {
 		background-color:#f0f0f0;
 		border-bottom:1px solid #aaa;
 	}
 
-	#mainBody #tabContainer {
+	.mongoBrowser .mainBody .tabContainer {
 		padding-left:230px;
 	}
 
-	#mainBody #tabContainer #tabList li {
+	.mongoBrowser .mainBody .tabContainer .tabList li {
 		background-color: white;
 		border: 1px solid #aaa;
 		border-radius: 3px;
 	}
 
-	#mainBody #tabContainer #tabList li a {
+	.mongoBrowser .mainBody .tabContainer .tabList li a {
 		background-color: white;
 		position: relative;
 		top: 5px;
@@ -212,24 +208,24 @@
 		font-size: 12px;
 	}
 
-	#mainBody #tabContainer #tabList li a:focus {outline:0;}
+	.mongoBrowser .mainBody .tabContainer .tabList li a:focus {outline:0;}
 
-	#mainBody #tabContainer #tabList li.ui-state-active a {
+	.mongoBrowser .mainBody .tabContainer .tabList li.ui-state-active a {
 		z-index:3;
 	}
 
-	#mainBody #tabContainer #tabList li a span {
+	.mongoBrowser .mainBody .tabContainer .tabList li a span {
 		position: relative;
 		top: -7px;
 		padding-right:10px;
 	}
 
-	#mainBody #tabContainer #tabList li a img {
+	.mongoBrowser .mainBody .tabContainer .tabList li a img {
 		position: relative;
 		top: -3px;
 	}
 
-	#mainBody #tabContainer #tabList li .closeButton {
+	.mongoBrowser .mainBody .tabContainer .tabList li .closeButton {
 		position: absolute;
 		top: 1px;
 		right: 3px;
@@ -238,12 +234,12 @@
 		font-size:11px;
 	}
 
-	#mainBody #tabContainer .tab {
+	.mongoBrowser .mainBody .tabContainer .tab {
 		position: relative;
 		z-index:2;
 	}
 
-	#mainBody #tabContainer .tab .promptContainer {
+	.mongoBrowser .mainBody .tabContainer .tab .promptContainer {
 		background-color: #fff;
 		font-size:12px;
 		padding: 10px;
@@ -252,24 +248,24 @@
 		margin-top:30px;
 	}
 
-	#mainBody #tabContainer .tab .promptContainer .info {
+	.mongoBrowser .mainBody .tabContainer .tab .promptContainer .info {
 		display:flex;
 	}
 
-	#mainBody #tabContainer .tab .promptContainer .info .connection,
-	#mainBody #tabContainer .tab .promptContainer .info .collection {
+	.mongoBrowser .mainBody .tabContainer .tab .promptContainer .info .connection,
+	.mongoBrowser .mainBody .tabContainer .tab .promptContainer .info .collection {
 		display: flex;
 		align-items: center;
 		margin-right:15px;
 	}
 
-	#mainBody #tabContainer .tab .promptContainer .info img {
+	.mongoBrowser .mainBody .tabContainer .tab .promptContainer .info img {
 		filter: grayscale(1);
 		-webkit-filter: grayscale(1);
 		margin-right: 5px;
 	}
 
-	#mainBody #tabContainer .tab .promptContainer .prompt textarea {
+	.mongoBrowser .mainBody .tabContainer .tab .promptContainer .prompt textarea {
 		border:none;
 		background-color: inherit;
 		width:100%;
@@ -283,43 +279,43 @@
 		margin-top:10px;
 	}
 
-	#mainBody #tabContainer .buttonBar {
+	.mongoBrowser .mainBody .tabContainer .buttonBar {
 		display:flex;
 		align-items:center;
 		padding:5px 10px;
 		font-size:12px;
 	}
 
-	#mainBody #tabContainer .buttonBar span {
+	.mongoBrowser .mainBody .tabContainer .buttonBar span {
 		display:flex;
 		align-items:center;
 	}
 
-	#mainBody #tabContainer .buttonBar .events img,
-	#mainBody #tabContainer .buttonBar .time img {
+	.mongoBrowser .mainBody .tabContainer .buttonBar .events img,
+	.mongoBrowser .mainBody .tabContainer .buttonBar .time img {
 		margin-right:5px;
 	}
 
-	#mainBody #tabContainer .buttonBar input {
+	.mongoBrowser .mainBody .tabContainer .buttonBar input {
 		width: 3em;
 	}
 
-	#mainBody #tabContainer .buttonBar .time {
+	.mongoBrowser .mainBody .tabContainer .buttonBar .time {
 		margin-left: 15px;
 	}
 
-	#mainBody #tabContainer .buttonBar .pages {
+	.mongoBrowser .mainBody .tabContainer .buttonBar .pages {
 		margin-left: 45px;
 	}
 
-	#mainBody #tabContainer .resultsTable {
+	.mongoBrowser .mainBody .tabContainer .resultsTable {
 		width: 50%;
 		height: 300px;
 		float: left;
 		overflow-y: scroll;
 	}
 
-	#mainBody #tabContainer .methods {
+	.mongoBrowser .mainBody .tabContainer .methods {
 		background-color: #494c4e;
 		width: 50%;
 		height: 300px;
@@ -331,7 +327,7 @@
 /* Status bar
  */
 
-	#statusBar {
+	.mongoBrowser .statusBar {
 		border-top: 1px solid white;
 		background-color: #eee;
 		font-size: 11px;
@@ -341,7 +337,7 @@
 /* (Modal) windows
  */
 
-	#windowContainer {
+	.mongoBrowser .windowContainer {
 		position:absolute;
 		top: 100px;
 		left: 100px;
@@ -378,83 +374,96 @@
 		border-radius: 2px;
 	}
 
-	#connectionManager #connectionsTable {
+	.mongoBrowser .connectionManager .connectionsTable {
 		width:100%;
 		margin-top: 5px;
 	}
 
-	#connectionManager + div .connectIcon {
+	.mongoBrowser .connectionManager .connectionsTable tbody tr:not(.whitespace) {
+		cursor: pointer
+	}
+
+	.mongoBrowser .connectionManager .connectionsTable .current {
+		background-color: #7299cd;
+	}
+
+	.mongoBrowser .connectionManager + div .connectIcon {
 		background: url('images/server_16x16.png') no-repeat;
 		width: 16px;
 		height: 16px;
 	}
 
-	#connectionSettings #portNumber {
+	.mongoBrowser .connectionSettings .connectionPort {
 		width: 70px;
 	}
 
-	#connectionSettings + div .testIcon {
+	.mongoBrowser .connectionSettings + div .testIcon {
 		background: url('images/server_16x16.png') no-repeat;
 		width: 16px;
 		height: 16px;
 	}
 
-	#connectionSettings + div .ui-dialog-buttonset {
+	.mongoBrowser .connectionSettings + div .ui-dialog-buttonset {
 		width: 100%;
 	}
 
-	#connectionSettings + div .ui-dialog-buttonset button:first-child {
+	.mongoBrowser .connectionSettings + div .ui-dialog-buttonset button:first-child {
 		float:left;
 	}
 
-	#connectionSettings + div .ui-dialog-buttonset button {
+	.mongoBrowser .connectionSettings + div .ui-dialog-buttonset button {
 		float:right;
 	}
 
 /* Global stuff
  */
 
+	.mongoBrowser * {
+		font-family: 'Roboto', 'Open Sans', sans-serif;
+		box-sizing:border-box;
+	}
+
  	/* Tables
  	 */
 
- 	table {
-		border: 1px solid #aaa;
-		background-color: white;
-		border-spacing: 0px;
-	}
+	 	.mongoBrowser table {
+			border: 1px solid #aaa;
+			background-color: white;
+			border-spacing: 0px;
+		}
 
-	table th {
-		font-weight: normal;
-		font-size: 1em;
-		border: 1px solid;
-		border-color: #ddd #fff #ddd #ddd;
-		border-top: none;
-		padding: 0 7px;
-		background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(242,242,242,1) 50%, rgba(229,229,229,1) 51%, rgba(254,254,254,1) 100%);
-		background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(242,242,242,1) 50%,rgba(229,229,229,1) 51%,rgba(254,254,254,1) 100%);
-		background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(242,242,242,1) 50%,rgba(229,229,229,1) 51%,rgba(254,254,254,1) 100%);
-	}
+		.mongoBrowser table th {
+			font-weight: normal;
+			font-size: 1em;
+			border: 1px solid;
+			border-color: #ddd #fff #ddd #ddd;
+			border-top: none;
+			padding: 0 7px;
+			background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(242,242,242,1) 50%, rgba(229,229,229,1) 51%, rgba(254,254,254,1) 100%);
+			background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(242,242,242,1) 50%,rgba(229,229,229,1) 51%,rgba(254,254,254,1) 100%);
+			background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(242,242,242,1) 50%,rgba(229,229,229,1) 51%,rgba(254,254,254,1) 100%);
+		}
 
-	table th:first-child {
-		border-left: none;
-	}
+		.mongoBrowser table th:first-child {
+			border-left: none;
+		}
 
-	table td {
-		padding: 0 7px;
-	}
+		.mongoBrowser table td {
+			padding: 0 7px;
+		}
 
-	table.alignmentHelper,
-	table.alignmentHelper > * > * {
-		background: none;
-		border: none;
-		vertical-align: top;
-	}
+		.mongoBrowser table.alignmentHelper,
+		.mongoBrowser table.alignmentHelper > * > * {
+			background: none;
+			border: none;
+			vertical-align: top;
+		}
 
-	input {
-		border-radius: 3px;
-		border: 1px solid #aaa;
-		padding: 2px;
-	}
+		.mongoBrowser input {
+			border-radius: 3px;
+			border: 1px solid #aaa;
+			padding: 2px;
+		}
 
 /*
  * Overwrite some jquery stuff
