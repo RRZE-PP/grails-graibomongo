@@ -33,8 +33,8 @@ window.MongoBrowser = (function(){
 	 * from inside the {@link MongoBrowser(NS) MongoBrowser } namespace, you have to set it.
 	 * I.e.: <span class="signature">myMethod(self, arg1, arg2)</span>. (Unfortunately JSDoc can't document this well)
 	 *
-	 * @param {HTMLElement} appendTo the container to wich to append the MongoBrowser's gui
-	 * @param {object} options an object to get the options from
+	 * @param {HTMLElement} appendTo - the container to wich to append the MongoBrowser's gui
+	 * @param {MongoBrowser~options} options       - an object to get the options from
 	 */
 	function MongoBrowser(appendTo, options){
 		//allow the user to omit new
@@ -74,9 +74,21 @@ window.MongoBrowser = (function(){
 	 * @memberof MongoBrowser(NS)~
 	 */
 	function createDialogs(self){
+		/** @namespace dialogInitialisators
+		*/
 
+		/**
+		 * Initialises the connection settings dialog. This function usually cannot be called directly (except within
+		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+		 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "connectionManager" as first argument
+		 * and a list of presets or [] as second
+		 * @param {MongoBrowser~connectionPreset[]} [presets] - the connections to present to the user. if unset or [], the presets of the
+		 *                                         mongobrowser to which this dialog belongs, will be used
+		 * @memberof dialogInitialisators~
+		 * @inner
+		 */
 		function initConnectionManagerDialog(presets){
-			if(typeof presets === "undefined")
+			if(typeof presets === "undefined" || !$.isArray(presets) || presets.length === 0)
 				presets = self.state.connectionPresets;
 
 			var table = this.find(".connectionsTable tbody");
@@ -124,9 +136,11 @@ window.MongoBrowser = (function(){
 		}
 
 		/**
-		 * Initialises the connection settings dialog
-		 * @param dialog - the dialog on which this is called
-		 * @param {number|connectionPreset} [preset] - if preset is unset or an empty object the dialog will be empty
+		 * Initialises the connection settings dialog. This function usually cannot be called directly (except within
+		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+		 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "connectionSettings" as first argument
+		 * and a preset or {} as second
+		 * @param {number|MongoBrowser~connectionPreset} [preset] - if preset is unset or an empty object ({}) the dialog will be empty
 		 *                                             and saving will trigger preset creation (create mode) <br />
 		 *                                             if preset is a number the dialog will be prefilled with
 		 *                                             the corresponding preset's data in the list of presets
@@ -135,6 +149,8 @@ window.MongoBrowser = (function(){
 		 *                                             if preset is a {@link MongoBrowser~connectionPreset} the dialog
 		 *                                             will be prefilled with that preset's data and saving will trigger
 		 *                                             a preset creation (clone mode)
+		 * @memberof dialogInitialisators~
+		 * @inner
 		 */
 		function initConnectionSettingsDialog(preset){
 			if(typeof preset === "number"){
@@ -278,11 +294,12 @@ window.MongoBrowser = (function(){
 	 * connectionManager, connectionSettings
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
 	 * @param {string} dialogName - the name of the dialog to open
-	 * @param {connectionPreset[] | connectionPreset} [initArg] - when set, the initialisation function of the
+	 * @param {MongoBrowser~connectionPreset[] | MongoBrowser~connectionPreset} [initArg] -
+	 *                                      when set, the initialisation function of the
 	 *                                      dialog will be called (if it exists) and initArg passed as parameter <br />
-	 *                                      for connectionManager use a list of {@link MongoBrowser~connectionPreset} or [] <br/>
-	 *                                      for connectionSettings use a single {@link MongoBrowser~connectionPreset} or {}
-	 * @throws {ReferenceError} When no dialog with the name 'dialogName' not exists
+	 *                                      for further information, see the parameters to the functions in
+	 *                                      {@link dialogInitialisators }
+	 * @throws {ReferenceError} When no dialog with the name 'dialogName' exists
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 */
@@ -349,4 +366,10 @@ window.MongoBrowser = (function(){
  * @property {string} name - the name of the connection
  * @property {string} host - the host of the connection (ipv4, ipv6, domain)
  * @property {number} port - the port of the connection
+ */
+
+/**
+ * The options for mongobrowser
+ * @typedef {Object} MongoBrowser~options
+ * @property {MongoBrowser~connectionPreset[]} [connectionPresets] - a list of connection presets
  */
