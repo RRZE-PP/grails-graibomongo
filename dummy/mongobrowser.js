@@ -115,7 +115,8 @@ window.MongoBrowser = (function(){
 		self.options = typeof options !== "undefined" ? options : {};
 
 		self.state = {
-			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : []
+			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
+			connections: []
 		}
 
 		initUIElements(self);
@@ -362,6 +363,21 @@ window.MongoBrowser = (function(){
 		self.rootElement = self.uiElements.root = dummy.clone();
 	}
 
+	function createSidebarEnvironment(self){
+		var sideBar = self.uiElements.sideBar = self.rootElement.find(".sideBar ul").eq(0);
+
+		function toggleCollapsed(elem){
+			var elem = $(elem);
+			if(elem.hasClass("collapsed")){
+				elem.addClass("opened").removeClass("collapsed");
+			}else{
+				elem.removeClass("opened").addClass("collapsed");
+			}
+		}
+
+		sideBar.delegate(".foldIcon", "click", function(evt){toggleCollapsed(evt.target.parentNode)});
+	}
+
 	/**
 	 * Create the tab environment and stores several dummy elements for later copying
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
@@ -401,6 +417,7 @@ window.MongoBrowser = (function(){
 		createDialogs(self);
 		createTabEnvironment(self);
 		createActionBarButtons(self);
+		createSidebarEnvironment(self);
 	}
 
 	/**
@@ -464,11 +481,54 @@ window.MongoBrowser = (function(){
 	 * @memberof MongoBrowser#
 	 */
 	function connect(self, hostname, port, database){
-		throw new Error("Not implemented yet");
+		var db = MongoNS.simple_connect(hostname, port, database);
+		self.state.connections.push(db.getMongo());
+
+		var mongo = db.getMongo();
+		var databases = mongo.getDBNames();
+		var listItem = $('<li class="collapsed"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem"></span></li>');
+
+		var serverItem = listItem.clone().addClass("server");
+		var databaseItems = $("<ul></ul>");
+
+		serverItem.find(".listItem").text(hostname);
+		serverItem.append(databaseItems);
+
+		for(var i=0; i<databases.length; i++){
+			var database = databases[i];
+			var dbItem = listItem.clone().addClass("database");
+			var collectionsFolder = listItem.clone().addClass("folder");
+			var foldersInDB = $("<ul></ul>");
+			var collectionItems = $("<ul></ul>");
+
+			dbItem.find(".listItem").text(database);
+			collectionsFolder.find(".listItem").text("Collections");
+
+			collectionsFolder.append(collectionItems);
+			foldersInDB.append(collectionsFolder);
+			dbItem.append(foldersInDB);
+			databaseItems.append(dbItem);
+
+			var collections = mongo.getDB(database).getCollectionNames();
+
+			for(var j=0; j<collections.length; j++){
+				var collection = collections[j];
+
+				var collItem = listItem.clone().addClass("collection");
+				collItem.find(".listItem").text(collection);
+				collItem.on("dblclick", (function(connection, database, collection){
+					return function(){addTab(self, connection, database, collection)};
+				})(mongo, database, collection));
+				collectionItems.append(collItem);
+			}
+		}
+
+		self.uiElements.sideBar.append(serverItem);
+
 	}
 
 	MongoBrowser.prototype.addConnectionPreset = function(){Array.prototype.unshift.call(arguments, this); return addConnectionPreset.apply(this, arguments)};
-	MongoBrowser.prototype.connect            = function(){Array.prototype.unshift.call(arguments, this); return connect.apply(this, arguments)};
+	MongoBrowser.prototype.connect             = function(){Array.prototype.unshift.call(arguments, this); return connect.apply(this, arguments)};
 
 	return MongoBrowser;
 })();
