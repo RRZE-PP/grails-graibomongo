@@ -14,33 +14,11 @@
 	</script>
 
 	<script type="text/javascript" src="bson.js"></script>
-
-	<script>
-		function version(){
-			return "42.1337";
-		}
-
-		var BSON = bson().BSON;
-		var NumberLong = bson().Long;
-		var ObjectId = bson().ObjectID;
-		var BinData = bson().Binary;
-		var MinKey = bson().MinKey;
-		var MaxKey = bson().MaxKey;
-		var Timestamp = bson().Timestamp;
-
-		var NumberInt=function(){};
-
-
-		function print(){
-			console.log.apply(console, arguments);
-		}
-
-		Object.bsonsize = function(){
-			BSON.calculateObjectSize.apply(this, arguments);
-		}
-	</script>
-
 	<script type="text/javascript" src="assert.js"></script>
+
+	<script type="text/javascript" src="port_bson.js"></script>
+	<script type="text/javascript" src="port_misc.js"></script>
+
 	<script type="text/javascript" src="error_codes.js"></script>
 	<script type="text/javascript" src="port_cursor.js"></script>
 	<script type="text/javascript" src="collection.js"></script>
