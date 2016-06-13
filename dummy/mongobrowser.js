@@ -260,7 +260,6 @@ window.MongoBrowser = (function(){
 	 * Create the root Element. Currently copies from a static, hidden DOM-Node. In the future it
 	 * should create it from scratch, so as to remove the dependency on a html content
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
-	 * @returns {JQuery} the jQuery-wrapped rootElement
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 * @todo create element from scratch
@@ -273,7 +272,7 @@ window.MongoBrowser = (function(){
 			throw new Error("Creating UI from scratch is not yet implemented");
 		}
 
-		return dummy.clone();
+		self.rootElement = self.uiElements.root = dummy.clone();
 	}
 
 	/**
@@ -284,7 +283,7 @@ window.MongoBrowser = (function(){
 	 */
 	function initUIElements(self){
 		self.uiElements = {root:null, dialogs: {}, tabs:{}, buttons:{}, sideBar:null};
-		self.rootElement = self.uiElements.root = createRootElement(self);
+		createRootElement(self);
 		createDialogs(self);
 		createActionBarButtons(self);
 	}
