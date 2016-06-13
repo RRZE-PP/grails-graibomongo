@@ -125,6 +125,8 @@ class ShellController {
     	//TODO: JSON-parse-fehler in request.command abfangen
 		def result = jong.runCommand(request.command).map(new RawResultHandler());
 
+		mc.close()
+
 		render result as JSON
 	}
 
@@ -169,7 +171,9 @@ class ShellController {
 		def cursorId = 0;
 		if(scursor != null){
 			cursorId = scursor?.getId();
-			cursors[conn.hostname + conn.port + cursorId] = cursor
+			cursors[conn.hostname + conn.port + cursorId] = [cursor, mc]
+		}else{
+			mc.close()
 		}
 
 		render([nReturned: data.size(),
@@ -200,7 +204,7 @@ class ShellController {
 			nToReturn = 20;
 
 		if(cursorKey in cursors){
-			def cursor = cursors[cursorKey];
+			def cursor = cursors[cursorKey][0];
 
 			def data = []
 			for(int i=0; i<nToReturn; i++){
@@ -213,6 +217,7 @@ class ShellController {
 			}
 
 			if(cursor.getServerCursor() == null){
+				cursors[cursorKey][1].close()
 				cursors.remove(cursorKey);
 				cursorId = 0;
 			}
