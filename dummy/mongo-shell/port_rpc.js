@@ -1,6 +1,6 @@
 "use strict";
 
-window.rpc = (function(){
+var rpc = (function(){
 
 	var ServerSelectionMetadata = (function(){
 		/*
