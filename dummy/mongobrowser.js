@@ -21,6 +21,76 @@ function TODO(){
  */
 window.MongoBrowser = (function(){
 
+	/**
+	 * Represents a tab in the GUI
+	 * @class ConnectionTab
+	 *
+	 * @param {String} name - the name to set in the tab handle
+	 * @param {String} prefix - a prefix to prepend before the name to make it unique
+	 *                          across {@link MongoBrowser } instances
+	 * @param {JQuery} dummyLink - a jQuery wrapped <tt>HTMLElement</tt> (LI) to append as tab handle. Must
+	 *                             contain a .tabText to put the tab title in
+	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
+	 */
+	function ConnectionTab(name, prefix, dummyLink, dummyTab){
+		this.link = dummyLink.clone();
+		this.link.find("a").attr("href", "#"+prefix+"_"+ConnectionTab.instances);
+		this.link.find(".tabText").text(name);
+
+		this.tab = dummyTab.clone();
+		this.tab.attr('id', prefix+"_"+ConnectionTab.instances++);
+	}
+
+	/** The total number of Connection Tabs created to savely create unique IDs
+	 * @static
+	 */
+	ConnectionTab.instances = 0;
+
+	/**
+	 * Appends this tab to the GUI
+	 *
+	 * @param {JQuery} parent - a jQuery wrapped <tt>HTMLElement</tt> to this tab to. Must contain
+	 *                          a ul.tabList to append the handle to
+	 */
+	ConnectionTab.prototype.appendTo = function(parent){
+		parent.append(this.tab);
+		parent.children(".tabList").append(this.link);
+		parent.tabs("refresh");
+
+		//select the first tab, if no tab was selected before
+		if(parent.children(".tabList").children().size() === 1)
+			parent.tabs("option", "active", 0);
+	}
+
+	/**
+	 * Creates new tabs
+	 * @class TabFactory
+	 *
+	 * @param {JQuery} dummyLink - a jQuery wrapped <tt>HTMLElement</tt> (LI) to append as tab handle. Must
+	 *                             contain a .tabText to put the tab title in
+	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
+	 */
+	function TabFactory(dummyLink, dummyTab){
+		this.prefix = "tabs"+TabFactory.instances++;
+		this.dummyLink = dummyLink;
+		this.dummyTab = dummyTab;
+	}
+
+	/** The total number of factories created to savely create unique IDs
+	 * @static
+	 */
+	TabFactory.instances = 0;
+
+	/**
+	 * Creates a new tab with the given name
+	 *
+	 * @param {string} name - the name to set on the tab handle
+	 * @returns {ConnectionTab} the created instance
+	 */
+	TabFactory.prototype.newTab = function(name){
+		return new ConnectionTab(name, this.prefix, this.dummyLink, this.dummyTab);
+	}
+
 
 	/**
 	 * Creates a MongoBrowser instance. Can be called using new or without it.
@@ -53,6 +123,23 @@ window.MongoBrowser = (function(){
 		self.rootElement.appendTo(appendTo);
 		self.rootElement.addClass("mongoBrowser");
 		self.rootElement.css("display", "block");
+	}
+
+	/**
+	 * Adds a new tab to the MongoBrowser's gui.
+	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @param {Mongo} connection - the mongo instance over which to send commands for elements in this tab
+	 * @param {string} database - the database to operate on in this tab
+	 * @param {string} collectio - the default collection in this tab
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 */
+	function addTab(self, connection, database, collection){
+		var tab = self.state.tabFactory.newTab('db.getCollection("'+collection+"').find({})");
+		tab.appendTo(self.uiElements.tabs.container);
+		tab.connection = connection;
+		tab.database = database;
+		tab.collection = collection;
 	}
 
 	/**
@@ -276,6 +363,33 @@ window.MongoBrowser = (function(){
 	}
 
 	/**
+	 * Create the tab environment and stores several dummy elements for later copying
+	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 */
+	function createTabEnvironment(self) {
+		var container = self.uiElements.tabs.container = self.rootElement.find(".tabContainer");
+
+		var dummyTab = container.children("div").eq(0);
+		var dummyLink = container.find("li").eq(0);
+
+		self.state.tabFactory = new TabFactory(dummyLink.clone().css("display", ""), dummyTab.clone().css("display", ""));
+
+		dummyLink.remove();
+		dummyTab.remove();
+
+		container.tabs();
+
+		//make closeable
+		self.uiElements.tabs.container.delegate(".closeButton", "click", function(){
+			var panelId = $(this).closest("li").remove().attr("aria-controls");
+			$("#" + panelId ).remove();
+			self.uiElements.tabs.container.tabs("refresh");
+		});
+	}
+
+	/**
 	 * Creates and initiates all UI Elements
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
 	 * @private
@@ -285,6 +399,7 @@ window.MongoBrowser = (function(){
 		self.uiElements = {root:null, dialogs: {}, tabs:{}, buttons:{}, sideBar:null};
 		createRootElement(self);
 		createDialogs(self);
+		createTabEnvironment(self);
 		createActionBarButtons(self);
 	}
 

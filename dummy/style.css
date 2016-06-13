@@ -136,6 +136,7 @@
 		transform: scaleY(0);
 		-ms-transform: scaleY(0);
 		transition:transform 0.25s;
+		position: absolute; /*TODO: find a better way to do the animation */;
 	}
 
 	.mongoBrowser .sideBar li.opened > ul {
