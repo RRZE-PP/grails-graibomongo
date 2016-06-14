@@ -292,7 +292,7 @@
 		align-items:center;
 	}
 
-	.mongoBrowser .mainBody .tabContainer .buttonBar .events img,
+	.mongoBrowser .mainBody .tabContainer .buttonBar .collection img,
 	.mongoBrowser .mainBody .tabContainer .buttonBar .time img {
 		margin-right:5px;
 	}

@@ -25,20 +25,45 @@ window.MongoBrowser = (function(){
 	 * Represents a tab in the GUI
 	 * @class ConnectionTab
 	 *
-	 * @param {String} name - the name to set in the tab handle
 	 * @param {String} prefix - a prefix to prepend before the name to make it unique
 	 *                          across {@link MongoBrowser } instances
 	 * @param {JQuery} dummyLink - a jQuery wrapped <tt>HTMLElement</tt> (LI) to append as tab handle. Must
 	 *                             contain a .tabText to put the tab title in
 	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
+	 * @param {MongoNS.DB} database - the database to which db should equate in this tab
+	 * @param {string} collection - the default collection to use
 	 */
-	function ConnectionTab(name, prefix, dummyLink, dummyTab){
-		this.link = dummyLink.clone();
-		this.link.find("a").attr("href", "#"+prefix+"_"+ConnectionTab.instances);
-		this.link.find(".tabText").text(name);
+	function ConnectionTab(prefix, dummyLink, dummyTab, database, collection){
+		this.uiElements = {};
 
-		this.tab = dummyTab.clone();
-		this.tab.attr('id', prefix+"_"+ConnectionTab.instances++);
+		var link = this.uiElements.link = dummyLink.clone();
+		var tab = this.uiElements.tab = dummyTab.clone();
+		var id = prefix+"_"+ConnectionTab.instances++;
+		var connection = database.getMongo().host.substr(0, database.getMongo().host.indexOf("/"));
+		var defaultPrompt = "db.getCollection(\""+collection+"\").find({})";
+
+		link.find("a").attr("href", "#"+id);
+		tab.attr('id', id);
+
+		var ui = this.uiElements = {title: link.find(".tabText"),
+									   info: {
+									    	connection: tab.find(".info .connection span"),
+									    	database: tab.find(".info .database span"),
+									    	collection: tab.find(".buttonBar .collection span"),
+									    	time: tab.find(".buttonBar .time span"),
+									   },
+									   prompt: tab.find(".prompt textarea"),
+									   tab: this.uiElements.tab,
+									   link: this.uiElements.link
+									}
+
+		ui.title.text(defaultPrompt.substr(0, 20)+"...");
+		ui.info.connection.text(connection);
+		ui.info.database.text(database.toString());
+		ui.info.collection.text(collection);
+		ui.prompt.val(defaultPrompt);
+
+		this.db = database
 	}
 
 	/** The total number of Connection Tabs created to savely create unique IDs
@@ -53,8 +78,8 @@ window.MongoBrowser = (function(){
 	 *                          a ul.tabList to append the handle to
 	 */
 	ConnectionTab.prototype.appendTo = function(parent){
-		parent.append(this.tab);
-		parent.children(".tabList").append(this.link);
+		parent.append(this.uiElements.tab);
+		parent.children(".tabList").append(this.uiElements.link);
 		parent.tabs("refresh");
 
 		//select the first tab, if no tab was selected before
@@ -84,11 +109,11 @@ window.MongoBrowser = (function(){
 	/**
 	 * Creates a new tab with the given name
 	 *
-	 * @param {string} name - the name to set on the tab handle
-	 * @returns {ConnectionTab} the created instance
+	 * @param {MongoNS.DB} database - the database to which db should equate in this tab
+	 * @param {string} collection - the default collection to use
 	 */
-	TabFactory.prototype.newTab = function(name){
-		return new ConnectionTab(name, this.prefix, this.dummyLink, this.dummyTab);
+	TabFactory.prototype.newTab = function(database, collection){
+		return new ConnectionTab(this.prefix, this.dummyLink, this.dummyTab, database, collection);
 	}
 
 
@@ -129,18 +154,14 @@ window.MongoBrowser = (function(){
 	/**
 	 * Adds a new tab to the MongoBrowser's gui.
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
-	 * @param {Mongo} connection - the mongo instance over which to send commands for elements in this tab
 	 * @param {string} database - the database to operate on in this tab
-	 * @param {string} collectio - the default collection in this tab
+	 * @param {string} collection - the default collection in this tab
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 */
-	function addTab(self, connection, database, collection){
-		var tab = self.state.tabFactory.newTab('db.getCollection("'+collection+"').find({})");
+	function addTab(self, database, collection){
+		var tab = self.state.tabFactory.newTab(database, collection);
 		tab.appendTo(self.uiElements.tabs.container);
-		tab.connection = connection;
-		tab.database = database;
-		tab.collection = collection;
 	}
 
 	/**
@@ -501,13 +522,13 @@ window.MongoBrowser = (function(){
 		serverItem.append(databaseItems);
 
 		for(var i=0; i<databases.length; i++){
-			var database = databases[i];
+			var databaseName = databases[i];
 			var dbItem = listItem.clone().addClass("database");
 			var collectionsFolder = listItem.clone().addClass("folder");
 			var foldersInDB = $("<ul></ul>");
 			var collectionItems = $("<ul></ul>");
 
-			dbItem.find(".listItem").text(database);
+			dbItem.find(".listItem").text(databaseName);
 			collectionsFolder.find(".listItem").text("Collections");
 
 			collectionsFolder.append(collectionItems);
@@ -515,16 +536,16 @@ window.MongoBrowser = (function(){
 			dbItem.append(foldersInDB);
 			databaseItems.append(dbItem);
 
-			var collections = mongo.getDB(database).getCollectionNames();
+			var collections = mongo.getDB(databaseName).getCollectionNames();
 
 			for(var j=0; j<collections.length; j++){
 				var collection = collections[j];
 
 				var collItem = listItem.clone().addClass("collection");
 				collItem.find(".listItem").text(collection);
-				collItem.on("dblclick", (function(connection, database, collection){
-					return function(){addTab(self, connection, database, collection)};
-				})(mongo, database, collection));
+				collItem.on("dblclick", (function(database, collection){
+					return function(){addTab(self, database, collection)};
+				})(mongo.getDB(databaseName), collection));
 				collectionItems.append(collItem);
 			}
 		}
