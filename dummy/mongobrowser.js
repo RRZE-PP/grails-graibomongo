@@ -363,6 +363,12 @@ window.MongoBrowser = (function(){
 		self.rootElement = self.uiElements.root = dummy.clone();
 	}
 
+	/**
+	 * Create the sidebar and delegate click events on its elements for collapsing/opening elements
+	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 */
 	function createSidebarEnvironment(self){
 		var sideBar = self.uiElements.sideBar = self.rootElement.find(".sideBar ul").eq(0);
 
