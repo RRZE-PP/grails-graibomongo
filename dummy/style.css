@@ -304,6 +304,10 @@
 		border: 0px;
 	}
 
+	.mongoBrowser .mainBody .tabContainer .resultsTable tr {
+		cursor: default;
+	}
+
 	.mongoBrowser .mainBody .tabContainer .resultsTable img.typeIcon {
 		vertical-align: middle;
 	}

@@ -570,7 +570,10 @@ window.MongoBrowser = (function(){
 
 		//make result items collapsible
 		self.uiElements.tabs.container.delegate(".foldIcon", "click", function(){
-			var tr = $(this).parentsUntil("tr").parent();
+			$(this).parentsUntil("tr").parent().dblclick();
+		});
+		self.uiElements.tabs.container.delegate("tr", "dblclick", function(){
+			var tr = $(this);
 			var collapse = tr.hasClass("opened");
 			var depth = parseInt(tr.attr("data-indent"));
 
