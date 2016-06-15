@@ -35,6 +35,7 @@ window.MongoBrowser = (function(){
 	 */
 	function ConnectionTab(prefix, dummyLink, dummyTab, database, collection){
 		this.uiElements = {};
+		this.state = {};
 
 		var link = this.uiElements.link = dummyLink.clone();
 		var tab = this.uiElements.tab = dummyTab.clone();
@@ -54,7 +55,8 @@ window.MongoBrowser = (function(){
 									   },
 									   prompt: tab.find(".prompt textarea"),
 									   tab: this.uiElements.tab,
-									   link: this.uiElements.link
+									   link: this.uiElements.link,
+									   results: tab.find(".resultsTable tbody")
 									}
 
 		ui.title.text(defaultPrompt.substr(0, 20)+"...");
@@ -63,7 +65,8 @@ window.MongoBrowser = (function(){
 		ui.info.collection.text(collection);
 		ui.prompt.val(defaultPrompt);
 
-		this.db = database
+		this.state.id = id;
+		this.state.db = database
 	}
 
 	/** The total number of Connection Tabs created to savely create unique IDs
@@ -89,6 +92,112 @@ window.MongoBrowser = (function(){
 		//select the first tab, if no tab was selected before
 		if(parent.children(".tabList").children().size() === 1)
 			parent.tabs("option", "active", 0);
+	}
+
+	/**
+	 * Execute the code from the prompt within the MongoNS namespace on this tab's db
+	 * @method
+	 * @memberof ConnectionTab
+	 */
+	ConnectionTab.prototype.execute = function(){
+		var startTime = $.now();
+
+		var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
+
+		var self = this;
+
+		function base_print(indent, image, alt, col1, col2, col3) {
+			self.uiElements.results.append($("<tr " + (indent !== 0 ? "data-indent='" + indent + "'" : "") + "> \
+				<td><span class='foldIcon'></span> <img src='images/" + image + "' alt='" + alt + "' /> " + col1 + "</td> \
+				<td>" + col2 + "</td> \
+				<td>" + col3 + "</td></tr>"));
+		}
+
+		function printObject(key, val, indent) {
+			var keys = Object.keys(val);
+
+			base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " }", "Object");
+
+			for(var i=0; i<keys.length; i++){
+				printLine(keys[i], val[keys[i]], indent + 1);
+			}
+		}
+
+		function printArray(key, val, indent) {
+			var keys = Object.keys(val);
+
+			base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array");
+
+			for(var i=0; i<keys.length; i++){
+				printLine(keys[i], val[keys[i]], indent + 1);
+			}
+		}
+
+		function printString(key, val, indent) {
+			base_print(indent, "bson_string_16x16.png", "string", key, val, "String");
+		}
+
+		function printNumber(key, val, indent) {
+			base_print(indent, "bson_double_16x16.png", "number", key, val, "Double or Long or Int :(");
+		}
+
+		function printBoolean(key, val, indent) {
+			base_print(indent, "bson_bool_16x16.png", "boolean", key, val, "Boolean");
+		}
+
+		function printNull(key, val, indent) {
+			base_print(indent, "bson_null_16x16.png", "null", key, "null", "Null");
+		}
+
+		function printUndefined(key, val, indent) {
+			base_print(indent, "bson_unsupported_16x16.png", "undefined", key, "undefined", "Undefined");
+		}
+
+		function printUnsupported(key, val, indent) {
+			base_print(indent, "bson_unsupported_16x16.png", "unsupported", key, "", "unsupported");
+		}
+
+		function printLine(key, val, indent) {
+			if(val instanceof Array)
+				printArray(key, val, indent);
+			else if(typeof val === "string" || val instanceof String)
+				printString(key, val, indent);
+			else if(typeof val === "number" || val instanceof Number) //TODO: Int vs Double!
+				printNumber(key, val, indent);
+			else if(typeof val === "boolean")
+				printBoolean(key, val, indent);
+			else if(val === null) //TODO: Int vs Double!
+				printNull(key, val, indent);
+			else if(typeof val === "undefined")
+				printUndefined(key, val, indent);
+			else if(typeof val === "object") //this comes last after all others have been ruled out
+				printObject(key, val, indent);
+			else
+				printUnsupported(key, val, indent); //should not happen
+		}
+
+		var duration = $.now() - startTime;
+		this.uiElements.info.time.text(duration/1000);
+
+		this.uiElements.results.children().remove();
+
+		printLine("(" + 1 + ")", ret, 0);
+
+		this.uiElements.results.children("[data-indent]").each(function(index, elem){
+			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*50+"px");
+		});
+
+		return ret;
+	}
+
+	/**
+	 * Return this tab's id
+	 * @method
+	 * @memberof ConnectionTab
+	 * @returns {string} the id of this tab
+	 */
+	ConnectionTab.prototype.id = function(){
+		return this.state.id;
 	}
 
 	/**
@@ -150,7 +259,8 @@ window.MongoBrowser = (function(){
 
 		self.state = {
 			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
-			connections: []
+			connections: [],
+			tabs: {}
 		}
 
 		initUIElements(self);
@@ -171,6 +281,7 @@ window.MongoBrowser = (function(){
 	function addTab(self, database, collection){
 		var tab = self.state.tabFactory.newTab(database, collection);
 		tab.appendTo(self.uiElements.tabs.container);
+		self.state.tabs[tab.id()] = tab;
 	}
 
 	/**
@@ -437,6 +548,7 @@ window.MongoBrowser = (function(){
 		self.uiElements.tabs.container.delegate(".closeButton", "click", function(){
 			var panelId = $(this).closest("li").remove().attr("aria-controls");
 			$("#" + panelId ).remove();
+			delete self.state.tabs[panelId];
 			self.uiElements.tabs.container.tabs("refresh");
 		});
 	}

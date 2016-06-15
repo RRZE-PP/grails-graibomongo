@@ -91,7 +91,8 @@ var MongoNS = (function(){
 	    Mongo = templ,
 	    DB = templ,
 	    DBQuery = templ,
-	    sh = templ;
+	    sh = templ,
+	    execute = execute;
 
 	errfct();
 
@@ -102,7 +103,8 @@ var MongoNS = (function(){
 		Mongo : Mongo,
 		DB : DB,
 		DBQuery : DBQuery,
-		sh: sh
+		sh: sh,
+		execute: execute
 	};
 
 	return toBeAccessible;

@@ -310,9 +310,10 @@
 	}
 
 	.mongoBrowser .mainBody .tabContainer .resultsTable {
-		width: 50%;
+		/*width: 50%;*/
+		width: 100%;
 		height: 300px;
-		float: left;
+		/*float: left;*/
 		overflow-y: scroll;
 	}
 

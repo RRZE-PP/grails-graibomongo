@@ -239,7 +239,7 @@ DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ ho
     }
 
     var qr = this.batch.m;
-    resultFlags = qr.resultFlags;
+    this.resultFlags = qr.resultFlags;
 
     if (qr.resultFlags & ResultFlagType.ResultFlag_ErrSet) {
         wasError = true;
