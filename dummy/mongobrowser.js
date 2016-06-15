@@ -68,12 +68,16 @@ window.MongoBrowser = (function(){
 
 	/** The total number of Connection Tabs created to savely create unique IDs
 	 * @static
+	 * @memberof ConnectionTab
+	 * @type {number}
 	 */
 	ConnectionTab.instances = 0;
 
 	/**
 	 * Appends this tab to the GUI
 	 *
+	 * @method
+	 * @memberof ConnectionTab
 	 * @param {JQuery} parent - a jQuery wrapped <tt>HTMLElement</tt> to this tab to. Must contain
 	 *                          a ul.tabList to append the handle to
 	 */
@@ -88,7 +92,7 @@ window.MongoBrowser = (function(){
 	}
 
 	/**
-	 * Creates new tabs
+	 * Creates new tabs. Each MongoBrowser should have its own factory to prevent collisions in the tab-ids
 	 * @class TabFactory
 	 *
 	 * @param {JQuery} dummyLink - a jQuery wrapped <tt>HTMLElement</tt> (LI) to append as tab handle. Must
@@ -103,14 +107,19 @@ window.MongoBrowser = (function(){
 
 	/** The total number of factories created to savely create unique IDs
 	 * @static
+	 * @memberof TabFactory
+	 * @type {number}
 	 */
 	TabFactory.instances = 0;
 
 	/**
 	 * Creates a new tab with the given name
 	 *
+	 * @method
+	 * @memberof TabFactory
 	 * @param {MongoNS.DB} database - the database to which db should equate in this tab
 	 * @param {string} collection - the default collection to use
+	 * @returns {ConnectionTab} the constructed ConnectionTab
 	 */
 	TabFactory.prototype.newTab = function(database, collection){
 		return new ConnectionTab(this.prefix, this.dummyLink, this.dummyTab, database, collection);
