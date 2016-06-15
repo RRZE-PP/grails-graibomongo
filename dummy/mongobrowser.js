@@ -106,9 +106,9 @@ window.MongoBrowser = (function(){
 
 		var self = this;
 
-		function base_print(indent, image, alt, col1, col2, col3) {
-			self.uiElements.results.append($("<tr " + (indent !== 0 ? "data-indent='" + indent + "'" : "") + "> \
-				<td><span class='foldIcon'></span> <img src='images/" + image + "' alt='" + alt + "' /> " + col1 + "</td> \
+		function base_print(indent, image, alt, col1, col2, col3, hasChildren) {
+			self.uiElements.results.append($("<tr data-indent='" + indent + "'  class='opened " + (hasChildren ? "hasChildren" : "") + "'> \
+				<td><span class='foldIcon'>&nbsp;</span> <img src='images/" + image + "' class='typeIcon' alt='" + alt + "' /> " + col1 + "</td> \
 				<td>" + col2 + "</td> \
 				<td>" + col3 + "</td></tr>"));
 		}
@@ -116,7 +116,7 @@ window.MongoBrowser = (function(){
 		function printObject(key, val, indent) {
 			var keys = Object.keys(val);
 
-			base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " }", "Object");
+			base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " }", "Object", keys.length !== 0);
 
 			for(var i=0; i<keys.length; i++){
 				printLine(keys[i], val[keys[i]], indent + 1);
@@ -126,7 +126,7 @@ window.MongoBrowser = (function(){
 		function printArray(key, val, indent) {
 			var keys = Object.keys(val);
 
-			base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array");
+			base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array", keys.length !== 0);
 
 			for(var i=0; i<keys.length; i++){
 				printLine(keys[i], val[keys[i]], indent + 1);
@@ -560,12 +560,38 @@ window.MongoBrowser = (function(){
 
 		container.tabs();
 
-		//make closeable
+		//make tabs closeable
 		self.uiElements.tabs.container.delegate(".closeButton", "click", function(){
 			var panelId = $(this).closest("li").remove().attr("aria-controls");
 			$("#" + panelId ).remove();
 			delete self.state.tabs[panelId];
 			self.uiElements.tabs.container.tabs("refresh");
+		});
+
+		//make result items collapsible
+		self.uiElements.tabs.container.delegate(".foldIcon", "click", function(){
+			var tr = $(this).parentsUntil("tr").parent();
+			var collapse = tr.hasClass("opened");
+			var depth = parseInt(tr.attr("data-indent"));
+
+			var next = tr.next();
+			var skipAllDeeperThan = null;
+			while(next.size() !== 0 && parseInt(next.attr("data-indent")) > depth){
+				if(skipAllDeeperThan !== null){
+					if(parseInt(next.attr("data-indent")) > skipAllDeeperThan){
+						next = next.next();
+						continue;
+					}
+					skipAllDeeperThan = null; //only, when not continued
+				}
+				if(!collapse && next.hasClass("collapsed")){ //when opening skip nested collapsed TRs
+					skipAllDeeperThan = parseInt(next.attr("data-indent"));
+				}
+				next.css("display", collapse?"none":"table-row");
+				next = next.next();
+			}
+
+			tr.removeClass("collapsed opened").addClass(collapse?"collapsed":"opened");
 		});
 	}
 
