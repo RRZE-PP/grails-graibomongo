@@ -293,6 +293,9 @@ window.MongoBrowser = (function(){
 	function createActionBarButtons(self){
 		var button = self.uiElements.buttons["connectionButton"] = self.rootElement.find(".actionBar .connectionButton");
 		button.on("click", function(){openDialog(self, "connectionManager")});
+
+		button = self.uiElements.buttons["executeButton"] = self.rootElement.find(".actionBar .executeButton");
+		button.on("click", function(){var tab = getCurrentTab(self); if(tab !== null) tab.execute()});
 	}
 
 
@@ -326,7 +329,11 @@ window.MongoBrowser = (function(){
 				var p = presets[i];
 
 				var newLine = $("<tr data-connectionIndex='"+i+"'><td>"+p.name+"</td><td>"+p.host+":"+p.port+"</td><td> </td></tr>");
-				newLine.on("dblclick", (function(p){return function(){openDialog(self, "connectionSettings", p)}})(p));
+				newLine.on("dblclick", (function(p){
+					return function(){
+						connect(self, p.host, p.port, "test");
+						self.uiElements.dialogs.connectionManager.dialog("close")}
+					})(p));
 				newLine.on("click", function(){table.children().removeClass("current"); $(this).addClass("current")});
 
 				table.append(newLine);
@@ -362,6 +369,15 @@ window.MongoBrowser = (function(){
 				var idx = parseInt(curLine.attr("data-connectionIndex"));
 				self.state.connectionPresets.splice(idx, 1);
 				self.uiElements.dialogs.connectionManager.initialise();
+		}
+
+		function connectCurrentConnectionPreset(){
+				var curLine = self.uiElements.dialogs.connectionManager.find(".current");
+				if(curLine.size() === 0)
+					return;
+				var idx = parseInt(curLine.attr("data-connectionIndex"));
+				var preset= self.state.connectionPresets[idx];
+				connect(self, preset.host, preset.port, "test");
 		}
 
 		/**
@@ -445,7 +461,7 @@ window.MongoBrowser = (function(){
 					},
 					{text: "Connect",
 					icons: {primary: "connectIcon"},
-					click: TODO}
+					click: function(){connectCurrentConnectionPreset(); $(this).dialog("close");}}
 				],
 				dialogClass: "mongoBrowser",
 				modal: true,
@@ -551,6 +567,20 @@ window.MongoBrowser = (function(){
 			delete self.state.tabs[panelId];
 			self.uiElements.tabs.container.tabs("refresh");
 		});
+	}
+
+	/**
+	 * Returns the currently shown {@link ConnectionTab }, if there is one
+	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 * @returns {ConnectionTab} the currently shown connection tab or <tt>null</tt>
+	 */
+	function getCurrentTab(self){
+		var visibleTab = self.uiElements.tabs.container.find("[aria-hidden=false]")
+		if(visibleTab.size() == 0)
+			return null;
+		return self.state.tabs[visibleTab.attr("id")];
 	}
 
 	/**
