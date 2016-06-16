@@ -380,10 +380,6 @@
 		cursor: pointer
 	}
 
-	.mongoBrowser .connectionManager .connectionsTable .current {
-		background-color: #7299cd;
-	}
-
 	.mongoBrowser .connectionManager + div .connectIcon {
 		background: url('images/server_16x16.png') no-repeat;
 		width: 16px;
@@ -479,6 +475,10 @@
 			background: none;
 			border: none;
 			vertical-align: top;
+		}
+
+		.mongoBrowser table tr.current {
+			background-color: #7299cd;
 		}
 
 		.mongoBrowser input {

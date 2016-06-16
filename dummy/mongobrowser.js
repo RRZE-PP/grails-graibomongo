@@ -580,6 +580,12 @@ window.MongoBrowser = (function(){
 			self.uiElements.tabs.container.tabs("refresh");
 		});
 
+		//highlight a clicked result item with the current selector
+		self.uiElements.tabs.container.delegate("tr", "click contextmenu", function(){
+			self.uiElements.tabs.container.find(".resultsTable .current").removeClass("current");
+			$(this).addClass("current");
+		});
+
 		//make result items collapsible
 		function collapseOrExpandResult(result, collapse, recursively){
 			var depth = parseInt(result.attr("data-indent"));
