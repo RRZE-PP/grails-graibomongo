@@ -616,6 +616,24 @@ window.MongoBrowser = (function(){
 		self.uiElements.tabs.container.delegate("tr", "dblclick", function(){
 			var tr = $(this);
 			collapseOrExpandResult(tr, tr.hasClass("opened"), false);
+
+		});
+
+		//register a context menu on result items
+		self.uiElements.tabs.container.contextMenu({
+			className: "mongoBrowser",
+			selector: ".resultsTable tr",
+			items: {
+				expand: {name: "Expand recursively", callback: function(){collapseOrExpandResult($(this), false, true);}},
+				collapse: {name: "Collapse recursively", callback: function(){collapseOrExpandResult($(this), true, true);}},
+				"sep1": "---------",
+				edit: {name: "Edit Document..."},
+				view: {name: "View Document..."},
+				insert: {name: "Insert Document..."},
+				"sep2": "---------",
+				copy: {name: "Copy JSON"},
+				delete: {name: "Delete Document..."}
+			}
 		});
 	}
 
