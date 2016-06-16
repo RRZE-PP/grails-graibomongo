@@ -659,7 +659,12 @@ window.MongoBrowser = (function(){
 				view: {name: "View Document..."},
 				insert: {name: "Insert Document..."},
 				"sep2": "---------",
-				copy: {name: "Copy JSON"},
+				copy: {name: "Copy JSON", callback: function(){
+						var idx = parseInt($(this).attr("data-index"));
+						var elem = $("<p>").attr("data-clipboard-text", JSON.stringify(getCurrentTab(self).getDataRow(idx)));
+						var c = new Clipboard(elem[0]);
+						elem.click(); c.destroy(); elem.remove(); //well that was quick :/
+						}},
 				delete: {name: "Delete Document..."}
 			}
 		});
