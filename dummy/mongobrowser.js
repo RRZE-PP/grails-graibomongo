@@ -71,6 +71,7 @@ window.MongoBrowser = (function(){
 
 		this.state.id = id;
 		this.state.db = database
+		this.state.displayedResult = [];
 	}
 
 	/** The total number of Connection Tabs created to savely create unique IDs
@@ -107,74 +108,77 @@ window.MongoBrowser = (function(){
 		var self = this;
 
 		function base_print(indent, image, alt, col1, col2, col3, hasChildren) {
-			self.uiElements.results.append($("<tr data-indent='" + indent + "'  class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
+			return $("<tr data-indent='" + indent + "'  class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
 				style='"+ (indent > 0 ? "display:none" : "") + "'> \
 				<td><span class='foldIcon'>&nbsp;</span> <img src='images/" + image + "' class='typeIcon' alt='" + alt + "' /> " + col1 + "</td> \
 				<td>" + col2 + "</td> \
-				<td>" + col3 + "</td></tr>"));
+				<td>" + col3 + "</td></tr>").appendTo(self.uiElements.results);
 		}
 
 		function printObject(key, val, indent) {
 			var keys = Object.keys(val);
 
-			base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " }", "Object", keys.length !== 0);
+			var ret = base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " }", "Object", keys.length !== 0);
 
 			for(var i=0; i<keys.length; i++){
 				printLine(keys[i], val[keys[i]], indent + 1);
 			}
+			return ret;
 		}
 
 		function printArray(key, val, indent) {
 			var keys = Object.keys(val);
 
-			base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array", keys.length !== 0);
+			var ret = base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array", keys.length !== 0);
 
 			for(var i=0; i<keys.length; i++){
 				printLine(keys[i], val[keys[i]], indent + 1);
 			}
+
+			return ret;
 		}
 
 		function printString(key, val, indent) {
-			base_print(indent, "bson_string_16x16.png", "string", key, val, "String");
+			return base_print(indent, "bson_string_16x16.png", "string", key, val, "String");
 		}
 
 		function printNumber(key, val, indent) {
-			base_print(indent, "bson_double_16x16.png", "number", key, val, "Double or Long or Int :(");
+			return base_print(indent, "bson_double_16x16.png", "number", key, val, "Double or Long or Int :(");
 		}
 
 		function printBoolean(key, val, indent) {
-			base_print(indent, "bson_bool_16x16.png", "boolean", key, val, "Boolean");
+			return base_print(indent, "bson_bool_16x16.png", "boolean", key, val, "Boolean");
 		}
 
 		function printNull(key, val, indent) {
-			base_print(indent, "bson_null_16x16.png", "null", key, "null", "Null");
+			return base_print(indent, "bson_null_16x16.png", "null", key, "null", "Null");
 		}
 
 		function printUndefined(key, val, indent) {
-			base_print(indent, "bson_unsupported_16x16.png", "undefined", key, "undefined", "Undefined");
+			return base_print(indent, "bson_unsupported_16x16.png", "undefined", key, "undefined", "Undefined");
 		}
 
 		function printUnsupported(key, val, indent) {
-			base_print(indent, "bson_unsupported_16x16.png", "unsupported", key, "", "unsupported");
+			return base_print(indent, "bson_unsupported_16x16.png", "unsupported", key, "", "unsupported");
 		}
 
 		function printLine(key, val, indent) {
 			if(val instanceof Array)
-				printArray(key, val, indent);
+				return printArray(key, val, indent);
 			else if(typeof val === "string" || val instanceof String)
-				printString(key, val, indent);
+				return printString(key, val, indent);
 			else if(typeof val === "number" || val instanceof Number) //TODO: Int vs Double!
-				printNumber(key, val, indent);
+				return printNumber(key, val, indent);
 			else if(typeof val === "boolean")
-				printBoolean(key, val, indent);
+				return printBoolean(key, val, indent);
 			else if(val === null) //TODO: Int vs Double!
-				printNull(key, val, indent);
+				return printNull(key, val, indent);
 			else if(typeof val === "undefined")
-				printUndefined(key, val, indent);
+				return printUndefined(key, val, indent);
 			else if(typeof val === "object") //this comes last after all others have been ruled out
-				printObject(key, val, indent);
+				return printObject(key, val, indent);
 			else
-				printUnsupported(key, val, indent); //should not happen
+				return printUnsupported(key, val, indent); //should not happen
 		}
 
 		var startTime = $.now();
@@ -189,17 +193,35 @@ window.MongoBrowser = (function(){
 		this.uiElements.results.children().remove();
 
 		if(ret instanceof MongoNS.Cursor){
+			this.state.displayedResult = [];
 			for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
-				printLine("(" + (i + 1) + ")", ret.next(), 0);
+				var val = ret.next();
+				this.state.displayedResult.push(val);
+				printLine("(" + (i + 1) + ")", val, 0).attr("data-index", i);
 			}
 		}else{
-			printLine("(" + 1 + ")", ret, 0);
+			this.state.displayedResult = [ret];
+			printLine("(" + 1 + ")", ret, 0).attr("data-index", 0);
 		}
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
 			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*50+"px");
 		});
 
 		return ret;
+	}
+
+	/**
+	 * Return the data row of the currently displayed data with index x (counting only top-level rows)
+	 * @method
+	 * @memberof ConnectionTab
+	 * @param {number} idx - the index to get
+	 * @returns {object|null} the object or null if the row does not exist (no data or index too large)
+	 */
+	ConnectionTab.prototype.getDataRow = function(idx){
+		if(idx >= this.state.displayedResult.length)
+			return null;
+		return this.state.displayedResult[idx];
+
 	}
 
 	/**
