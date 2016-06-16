@@ -603,7 +603,7 @@ window.MongoBrowser = (function(){
 		});
 
 		//highlight a clicked result item with the current selector
-		self.uiElements.tabs.container.delegate("tr", "click contextmenu", function(){
+		self.uiElements.tabs.container.delegate(".resultsTable tbody tr", "click contextmenu", function(){
 			self.uiElements.tabs.container.find(".resultsTable .current").removeClass("current");
 			$(this).addClass("current");
 		});
@@ -637,11 +637,11 @@ window.MongoBrowser = (function(){
 			result.removeClass("collapsed opened").addClass(collapse?"collapsed":"opened");
 		}
 
-		self.uiElements.tabs.container.delegate(".foldIcon", "click", function(){
+		self.uiElements.tabs.container.delegate(".resultsTable tbody tr .foldIcon", "click", function(){
 			var tr = $(this).parentsUntil("tr").parent();
 			collapseOrExpandResult(tr, tr.hasClass("opened"), false);
 		});
-		self.uiElements.tabs.container.delegate("tr", "dblclick", function(){
+		self.uiElements.tabs.container.delegate(".resultsTable tbody tr", "dblclick", function(){
 			var tr = $(this);
 			collapseOrExpandResult(tr, tr.hasClass("opened"), false);
 
@@ -650,7 +650,7 @@ window.MongoBrowser = (function(){
 		//register a context menu on result items
 		self.uiElements.tabs.container.contextMenu({
 			className: "mongoBrowser",
-			selector: ".resultsTable tr",
+			selector: ".resultsTable tbody tr",
 			items: {
 				expand: {name: "Expand recursively", callback: function(){collapseOrExpandResult($(this), false, true);}},
 				collapse: {name: "Collapse recursively", callback: function(){collapseOrExpandResult($(this), true, true);}},
