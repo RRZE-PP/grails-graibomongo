@@ -581,15 +581,9 @@ window.MongoBrowser = (function(){
 		});
 
 		//make result items collapsible
-		self.uiElements.tabs.container.delegate(".foldIcon", "click", function(){
-			$(this).parentsUntil("tr").parent().dblclick();
-		});
-		self.uiElements.tabs.container.delegate("tr", "dblclick", function(){
-			var tr = $(this);
-			var collapse = tr.hasClass("opened");
-			var depth = parseInt(tr.attr("data-indent"));
-
-			var next = tr.next();
+		function collapseOrExpandResult(result, collapse, recursively){
+			var depth = parseInt(result.attr("data-indent"));
+			var next = result.next();
 			var skipAllDeeperThan = null;
 			while(next.size() !== 0 && parseInt(next.attr("data-indent")) > depth){
 				if(skipAllDeeperThan !== null){
@@ -599,14 +593,29 @@ window.MongoBrowser = (function(){
 					}
 					skipAllDeeperThan = null; //only, when not continued
 				}
-				if(!collapse && next.hasClass("collapsed")){ //when opening skip nested collapsed TRs
+
+				if(!collapse && !recursively && next.hasClass("collapsed")){ //when opening skip nested collapsed TRs
 					skipAllDeeperThan = parseInt(next.attr("data-indent"));
 				}
+
+				if(recursively){
+					next.removeClass("collapsed opened").addClass(collapse?"collapsed":"opened");
+				}
 				next.css("display", collapse?"none":"table-row");
+
 				next = next.next();
 			}
 
-			tr.removeClass("collapsed opened").addClass(collapse?"collapsed":"opened");
+			result.removeClass("collapsed opened").addClass(collapse?"collapsed":"opened");
+		}
+
+		self.uiElements.tabs.container.delegate(".foldIcon", "click", function(){
+			var tr = $(this).parentsUntil("tr").parent();
+			collapseOrExpandResult(tr, tr.hasClass("opened"), false);
+		});
+		self.uiElements.tabs.container.delegate("tr", "dblclick", function(){
+			var tr = $(this);
+			collapseOrExpandResult(tr, tr.hasClass("opened"), false);
 		});
 	}
 
