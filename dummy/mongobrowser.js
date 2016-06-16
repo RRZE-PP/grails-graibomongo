@@ -56,7 +56,11 @@ window.MongoBrowser = (function(){
 									   prompt: tab.find(".prompt textarea"),
 									   tab: this.uiElements.tab,
 									   link: this.uiElements.link,
-									   results: tab.find(".resultsTable tbody")
+									   results: tab.find(".resultsTable tbody"),
+									   iterate: {
+									    	max: tab.find(".maxIterate"),
+									    	start: tab.find(".curIterate")
+									   }
 									}
 
 		ui.title.text(defaultPrompt.substr(0, 20)+"...");
@@ -100,14 +104,11 @@ window.MongoBrowser = (function(){
 	 * @memberof ConnectionTab
 	 */
 	ConnectionTab.prototype.execute = function(){
-		var startTime = $.now();
-
-		var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
-
 		var self = this;
 
 		function base_print(indent, image, alt, col1, col2, col3, hasChildren) {
-			self.uiElements.results.append($("<tr data-indent='" + indent + "'  class='opened " + (hasChildren ? "hasChildren" : "") + "'> \
+			self.uiElements.results.append($("<tr data-indent='" + indent + "'  class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
+				style='"+ (indent > 0 ? "display:none" : "") + "'> \
 				<td><span class='foldIcon'>&nbsp;</span> <img src='images/" + image + "' class='typeIcon' alt='" + alt + "' /> " + col1 + "</td> \
 				<td>" + col2 + "</td> \
 				<td>" + col3 + "</td></tr>"));
@@ -176,13 +177,24 @@ window.MongoBrowser = (function(){
 				printUnsupported(key, val, indent); //should not happen
 		}
 
+		var startTime = $.now();
+
+		var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
+		if(ret instanceof MongoNS.DBQuery)
+			ret = ret._exec()
+
 		var duration = $.now() - startTime;
 		this.uiElements.info.time.text(duration/1000);
 
 		this.uiElements.results.children().remove();
 
-		printLine("(" + 1 + ")", ret, 0);
-
+		if(ret instanceof MongoNS.Cursor){
+			for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
+				printLine("(" + (i + 1) + ")", ret.next(), 0);
+			}
+		}else{
+			printLine("(" + 1 + ")", ret, 0);
+		}
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
 			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*50+"px");
 		});

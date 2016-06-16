@@ -103,6 +103,7 @@ var MongoNS = (function(){
 		Mongo : Mongo,
 		DB : DB,
 		DBQuery : DBQuery,
+		Cursor: Cursor,
 		sh: sh,
 		execute: execute
 	};
