@@ -234,6 +234,7 @@ window.MongoBrowser = (function(){
 			this.state.displayedResult = [ret];
 			printLine("(" + 1 + ")", ret, 0).attr("data-index", 0);
 		}
+		this.uiElements.results.children().eq(0).dblclick(); //expand the first element
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
 			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*50+"px");
 		});
