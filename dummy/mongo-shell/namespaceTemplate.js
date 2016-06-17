@@ -72,6 +72,7 @@ var MongoNS = (function(){
 		help,
 		sh;
 
+	var typedResult; //this is a very hacky one: someone forgot var in bul_api.js:1211, but we don't patch around in their source
 
 	/* BEGIN_INSERT Insert Namespaced Code below */
 
