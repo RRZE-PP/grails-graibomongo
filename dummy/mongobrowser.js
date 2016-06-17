@@ -236,7 +236,7 @@ window.MongoBrowser = (function(){
 		}
 		this.uiElements.results.children().eq(0).dblclick(); //expand the first element
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
-			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*50+"px");
+			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
 		});
 
 		return ret;
