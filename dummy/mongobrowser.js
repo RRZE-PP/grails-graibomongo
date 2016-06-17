@@ -138,6 +138,18 @@ window.MongoBrowser = (function(){
 			return ret;
 		}
 
+		function printObjectId(key, val, indent) {
+			return base_print(indent, "bson_unsupported_16x16.png", "oid", key, val.toString(), "ObjectId");
+		}
+
+		function printRegExp(key, val, indent) {
+			return base_print(indent, "bson_unsupported_16x16.png", "regex", key, val.toString(), "Regular Expression");
+		}
+
+		function printDate(key, val, indent) {
+			return base_print(indent, "bson_datetime_16x16.png", "date", key, val.toString(), "Date");
+		}
+
 		function printString(key, val, indent) {
 			return base_print(indent, "bson_string_16x16.png", "string", key, val, "String");
 		}
@@ -165,6 +177,12 @@ window.MongoBrowser = (function(){
 		function printLine(key, val, indent) {
 			if(val instanceof Array)
 				return printArray(key, val, indent);
+			else if(val instanceof MongoNS.ObjectId)
+				return printObjectId(key, val, indent);
+			else if(val instanceof RegExp)
+				return printRegExp(key, val, indent);
+			else if(val instanceof Date)
+				return printDate(key, val, indent);
 			else if(typeof val === "string" || val instanceof String)
 				return printString(key, val, indent);
 			else if(typeof val === "number" || val instanceof Number) //TODO: Int vs Double!
