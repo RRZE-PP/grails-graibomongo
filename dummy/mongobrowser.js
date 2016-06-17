@@ -119,7 +119,7 @@ window.MongoBrowser = (function(){
 		function printObject(key, val, indent) {
 			var keys = Object.keys(val);
 
-			var ret = base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " }", "Object", keys.length !== 0);
+			var ret = base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " fields }", "Object", keys.length !== 0);
 
 			for(var i=0; i<keys.length; i++){
 				printLine(keys[i], val[keys[i]], indent + 1);
