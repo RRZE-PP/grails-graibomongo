@@ -2,6 +2,8 @@ package de.rrze.graibomongo
 
 import com.mongodb.MongoClient
 import com.mongodb.client.MongoDatabase
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriterSettings
 import org.jongo.Jongo
 import org.jongo.RawResultHandler
 import org.jongo.query.BsonQueryFactory
@@ -160,7 +162,7 @@ class ShellController {
 		for(int i=0; i<nToReturn; i++){
 			def item = cursor.tryNext()
 			if(item != null){
-				data.push(item)
+				data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
 			}else{
 				break
 			}
@@ -210,7 +212,7 @@ class ShellController {
 			for(int i=0; i<nToReturn; i++){
 				def item = cursor.tryNext()
 				if(item != null){
-					data.push(item)
+					data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
 				}else{
 					break
 				}

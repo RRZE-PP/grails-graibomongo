@@ -361,7 +361,10 @@ DBClientCursor.prototype.next = function(){
 
     // throw Error("Not completely implemented yet");
 
-    return this.batch.data[this.batch.pos++];
+    var extended_json = this.batch.data[this.batch.pos++];
+    var jsObj = JSON.parse(extended_json);
+
+    return jsObjectToJSObjectWithBsonValues(jsObj);
 
     // BSONObj o(batch.data);
     // batch.data += o.objsize();

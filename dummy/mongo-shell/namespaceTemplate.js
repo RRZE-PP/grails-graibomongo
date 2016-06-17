@@ -105,7 +105,8 @@ var MongoNS = (function(){
 		DBQuery : DBQuery,
 		Cursor: Cursor,
 		sh: sh,
-		execute: execute
+		execute: execute,
+		ObjectId: ObjectId
 	};
 
 	return toBeAccessible;
