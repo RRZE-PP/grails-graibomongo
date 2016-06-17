@@ -234,7 +234,7 @@ window.MongoBrowser = (function(){
 			this.state.displayedResult = [ret];
 			printLine("(" + 1 + ")", ret, 0).attr("data-index", 0);
 		}
-		this.uiElements.results.children().eq(0).dblclick(); //expand the first element
+		this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
 			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
 		});
@@ -277,6 +277,15 @@ window.MongoBrowser = (function(){
 	 */
 	ConnectionTab.prototype.id = function(){
 		return this.state.id;
+	}
+
+	/**
+	 * Select this tab to be the current tab
+	 * @method
+	 * @memberof ConnectionTab
+	 */
+	ConnectionTab.prototype.select = function(){
+		this.uiElements.link.children("a").click();
 	}
 
 	/**
@@ -360,6 +369,8 @@ window.MongoBrowser = (function(){
 	function addTab(self, database, collection){
 		var tab = self.state.tabFactory.newTab(database, collection);
 		tab.appendTo(self.uiElements.tabs.container);
+		tab.execute();
+		tab.select();
 		self.state.tabs[tab.id()] = tab;
 	}
 
@@ -799,8 +810,11 @@ window.MongoBrowser = (function(){
 			className: "mongoBrowser",
 			selector: ".resultsTable tbody tr",
 			items: {
-				expand: {name: "Expand recursively", callback: function(){collapseOrExpandResult($(this), false, true);}},
-				collapse: {name: "Collapse recursively", callback: function(){collapseOrExpandResult($(this), true, true);}},
+				expand: {name: "Expand recursively",
+				            callback: function(){collapseOrExpandResult($(this), false, true);},
+				            disabled: function(){$(this).hasClass("hasChildren")}},
+				collapse: {name: "Collapse recursively", callback: function(){collapseOrExpandResult($(this), true, true);},
+				            disabled: function(){$(this).hasClass("hasChildren")}},
 				"sep1": "---------",
 				edit: {name: "Edit Document...", callback: function(){
 						var idx = parseInt($(this).attr("data-index"));
