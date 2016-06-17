@@ -196,7 +196,7 @@ window.MongoBrowser = (function(){
 				return printDate(key, val, indent);
 			else if(typeof val === "string" || val instanceof String)
 				return printString(key, val, indent);
-			else if(typeof val === "number" || val instanceof Number && parseInt(val) === val)
+			else if((typeof val === "number" || val instanceof Number) && parseInt(val) === val)
 				return printInt(key, val, indent);
 			else if(typeof val === "number" || val instanceof Number)
 				return printDouble(key, val, indent);
