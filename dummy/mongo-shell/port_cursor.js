@@ -192,6 +192,7 @@ DBClientCursor.prototype.assembleQueryRequest = function(/*const string& */ns,
                           /*const BSONObj* */ fieldsToReturn,
                           /*int*/ queryOptions,
                           /*Message&*/ toSend) {
+
     return {
         opts: queryOptions,
         ns: ns,
@@ -296,7 +297,7 @@ DBClientCursor.prototype.commandDataReceived = function() {
         this.wasError = true;
     }
 
-    this.batch.data = [this.batch.m]
+    this.batch.data = [JSON.stringify(this.batch.m)]
 }
 
 DBClientCursor.prototype.init = function(){

@@ -79,22 +79,22 @@ function jsObjectToJSObjectWithBsonValues(object){
  * Output in MongoDB Extended JSON Strict mode
  */
 ObjectId.prototype.toJSON = function() {
-	return '{ "$oid": "' + this.toHexString() + '" }';
+	return { "$oid": this.toHexString() };
 }
 
 NumberLong.prototype.toJSON = function() {
-	return '{ "$numberLong": "'+this.toString()+'"}';
+	return { "$numberLong": this.toString()};
 }
 
 MaxKey.prototype.toJSON = function() {
-	return '{ "$maxKey": 1 }';
+	return { "$maxKey": 1 };
 }
 
 MinKey.prototype.toJSON = function() {
-	return '{ "$minKey": 1 }';
+	return { "$minKey": 1 };
 }
 
 RegExp.prototype.toJSON = function(){
-	return '{ "$regex": "' + this.source + '", "$options": "' + this.flags + '" }';
+	return { "$regex": this.source, "$options": this.flags };
 
 }

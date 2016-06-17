@@ -4,6 +4,7 @@ import com.mongodb.MongoClient
 import com.mongodb.client.MongoDatabase
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
+import org.bson.BsonDocument
 import org.jongo.Jongo
 import org.jongo.RawResultHandler
 import org.jongo.query.BsonQueryFactory
@@ -150,7 +151,7 @@ class ShellController {
 		def database = request.ns.substring(0, request.ns.indexOf("."));
 		def collection = request.ns.substring(request.ns.indexOf(".")+1);
 
-		def query = new BsonQueryFactory(new JacksonEngine(Mapping.defaultMapping())).createQuery(request.query).toDBObject()
+		def query = BsonDocument.parse(request.query);
 		def iterable = mc.getDatabase(database).getCollection(collection).find(query)//TODO: Handle other options
 		def cursor = iterable.iterator()
 
