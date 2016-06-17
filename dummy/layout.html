@@ -49,7 +49,7 @@
 						</span>
 
 						<div class="prompt">
-							<textarea></textarea>
+							<textarea class="userInput"></textarea>
 						</div>
 					</div>
 
@@ -101,6 +101,28 @@
 					<tr><td>&nbsp;</td><td></td></tr>
 					<tr><td>Address:</td><td><input type="text" class="connectionHost"> : <input type="number" value="27017" class="connectionPort" /> <br />Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name. <!--TODO: check if this is true with our grails client! --></td></tr>
 				</table>
+			</div>
+
+			<div class="editDocument window modal" title="Edit Document">
+					<span class="info">
+							<span class="connection"><img src="images/server_16x16.png" alt="connection"><span></span></span>
+							<span class="database"><img src="images/database_16x16.png" alt="database"><span></span></span>
+							<span class="collection"><img src="images/collection_16x16.png"> <span></span></span>
+					</span>
+					<div class="documentContainer">
+						<textarea class="documentEditor userInput"></textarea>
+					</div>
+			</div>
+
+			<div class="viewDocument window modal" title="View Document">
+					<span class="info">
+							<span class="connection"><img src="images/server_16x16.png" alt="connection"><span></span></span>
+							<span class="database"><img src="images/database_16x16.png" alt="database"><span></span></span>
+							<span class="collection"><img src="images/collection_16x16.png"> <span></span></span>
+					</span>
+					<div class="documentContainer">
+						<textarea class="documentEditor userInput" disabled="disabled"></textarea>
+					</div>
 			</div>
 		</div>
 	</div>

@@ -247,20 +247,6 @@
 		margin-right: 5px;
 	}
 
-	.mongoBrowser .mainBody .tabContainer .tab .promptContainer .prompt textarea {
-		border:none;
-		background-color: inherit;
-		width:100%;
-		height:50px;
-		border-radius: 3px;
-		background-color: #494c4e;
-		padding:3px;
-		border:1px solid #c7c5c4;
-		font-family: monospace;
-		color:white;
-		margin-top:10px;
-	}
-
 	.mongoBrowser .mainBody .tabContainer .buttonBar {
 		display:flex;
 		align-items:center;
@@ -306,10 +292,6 @@
 
 	.mongoBrowser .mainBody .tabContainer .resultsTable tr {
 		cursor: default;
-	}
-
-	.mongoBrowser .mainBody .tabContainer .resultsTable img.typeIcon {
-		vertical-align: middle;
 	}
 
 	.mongoBrowser .mainBody .tabContainer .methods {
@@ -371,42 +353,61 @@
 		border-radius: 2px;
 	}
 
-	.mongoBrowser .connectionManager .connectionsTable {
+	.mongoBrowser .window.connectionManager .connectionsTable {
 		width:100%;
 		margin-top: 5px;
 	}
 
-	.mongoBrowser .connectionManager .connectionsTable tbody tr:not(.whitespace) {
+	.mongoBrowser .window.connectionManager .connectionsTable tbody tr:not(.whitespace) {
 		cursor: pointer
 	}
 
-	.mongoBrowser .connectionManager + div .connectIcon {
+	.mongoBrowser .window.connectionManager ~ div.ui-dialog-buttonpane .connectIcon {
 		background: url('images/server_16x16.png') no-repeat;
 		width: 16px;
 		height: 16px;
 	}
 
-	.mongoBrowser .connectionSettings .connectionPort {
+	.mongoBrowser .window.connectionSettings .connectionPort {
 		width: 70px;
 	}
 
-	.mongoBrowser .connectionSettings + div .testIcon {
+	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .testIcon {
 		background: url('images/server_16x16.png') no-repeat;
 		width: 16px;
 		height: 16px;
 	}
 
-	.mongoBrowser .connectionSettings + div .ui-dialog-buttonset {
+	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset,
+	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset {
 		width: 100%;
 	}
 
-	.mongoBrowser .connectionSettings + div .ui-dialog-buttonset button:first-child {
+	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button:first-child,
+	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button:first-child {
 		float:left;
 	}
 
-	.mongoBrowser .connectionSettings + div .ui-dialog-buttonset button {
+	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button,
+	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button {
 		float:right;
 	}
+
+	.mongoBrowser .window.editDocument .documentEditor,
+	.mongoBrowser .window.viewDocument .documentEditor {
+		min-height: 400px;
+		min-width: 600px;
+		width: 100%;
+		overflow: scroll;
+	}
+
+	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .validateIcon {
+		background: url('images/webmichl-light-bulb-14x24.png') no-repeat;
+		width: 14px;
+		height: 24px;
+		top:9px;
+	}
+
 
 /* Global stuff
  */
@@ -439,6 +440,24 @@
 		content: '⊟';
 		visibility: visible;
 		font-size:15px;
+	}
+
+	.mongoBrowser textarea.userInput {
+		border:none;
+		width:100%;
+		height:50px;
+		border-radius: 3px;
+		background-color: #494c4e;
+		padding:3px;
+		border:1px solid #c7c5c4;
+		font-family: monospace;
+		color:white;
+		margin-top:10px;
+	}
+
+
+	.mongoBrowser img.typeIcon {
+		vertical-align: middle;
 	}
 
  	/* Tables

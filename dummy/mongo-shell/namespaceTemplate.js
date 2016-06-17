@@ -106,7 +106,8 @@ var MongoNS = (function(){
 		Cursor: Cursor,
 		sh: sh,
 		execute: execute,
-		ObjectId: ObjectId
+		ObjectId: ObjectId,
+		tojson: tojson
 	};
 
 	return toBeAccessible;

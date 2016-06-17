@@ -71,6 +71,7 @@ window.MongoBrowser = (function(){
 
 		this.state.id = id;
 		this.state.db = database
+		this.state.collection = collection;
 		this.state.displayedResult = [];
 	}
 
@@ -226,6 +227,19 @@ window.MongoBrowser = (function(){
 		});
 
 		return ret;
+	}
+
+
+
+	/**
+	 * Return information about this tab
+	 * @method
+	 * @memberof ConnectionTab
+	 * @returns {database: MongoNS.DB, collection: String} this tab's DB and collection
+	 */
+	ConnectionTab.prototype.getInfo = function(){
+		return {database: this.state.db,
+				collection: this.state.collection}
 	}
 
 	/**
@@ -501,7 +515,67 @@ window.MongoBrowser = (function(){
 			}
 		}
 
-		//begin connetion manager
+		/**
+		 * Initialises the edit document dialog. This function usually cannot be called directly (except within
+		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+		 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "editDocument" as first argument
+		 * and a <tt>MongoNS.DB</tt> and document as third and fourth parameter
+		 * @param {MongoNS.DB} db - the database to operate on when saving the document
+		 * @param {Object} doc - the document to serialize and display
+		 * @param {String} collection - the collection from which the doc is taken
+		 * @memberof dialogInitialisators~
+		 * @inner
+		 */
+		function initEditDocumentDialog(db, doc, collection){
+			var curDialog = self.uiElements.dialogs.editDocument;
+			var connection = db.getMongo().host.substr(0, db.getMongo().host.indexOf("/"));
+
+			var buttons = curDialog.dialog("option", "buttons");
+			buttons[1].click = function(){
+				var newVal = self.uiElements.dialogs.editDocument.find(".documentEditor").val();
+				try{
+					var newObj = MongoNS.execute(MongoNS, db, "(function(){ return "+ newVal.replace(/\n/g, "") +";})()");
+				}catch(e){
+					alert("Invalid JSON");
+					return;
+				}
+				if(typeof newObj === "undefined"){
+					alert("Invalid JSON");
+					return;
+				}
+				db.getCollection(collection).update({"_id": doc._id}, newObj);
+			};
+			curDialog.dialog("option", "buttons", buttons);
+
+			curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
+			curDialog.find(".info .connection span").text(connection);
+			curDialog.find(".info .database span").text(db.toString());
+			curDialog.find(".info .collection span").text(collection);
+		}
+
+		/**
+		 * Initialises the view document dialog. This function usually cannot be called directly (except within
+		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+		 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "viewDocument" as first argument
+		 * and a <tt>MongoNS.DB</tt> and document as third and fourth parameter
+		 * @param {MongoNS.DB} db - the database to display at the top border
+		 * @param {Object} doc - the document to serialize and display
+		 * @param {String} collection - the collection from which the doc is taken
+		 * @memberof dialogInitialisators~
+		 * @inner
+		 */
+		function initViewDocumentDialog(db, doc, collection){
+			var curDialog = self.uiElements.dialogs.viewDocument;
+			var connection = db.getMongo().host.substr(0, db.getMongo().host.indexOf("/"));
+
+			curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
+			curDialog.find(".info .connection span").text(connection);
+			curDialog.find(".info .database span").text(db.toString());
+			curDialog.find(".info .collection span").text(collection);
+
+		}
+
+		//begin connection manager
 		var curDialog = self.uiElements.dialogs.connectionManager =
 			self.rootElement.find(".connectionManager").dialog({
 				autoOpen: false,
@@ -551,6 +625,47 @@ window.MongoBrowser = (function(){
 
 		curDialog.initialise = initConnectionSettingsDialog;
 		curDialog.initialise();
+
+
+		//begin document editor
+		curDialog = self.uiElements.dialogs.editDocument = self.rootElement.find(".editDocument").dialog({
+			autoOpen: false,
+			dialogClass: "mongoBrowser",
+			buttons:[
+					{text: "Validate",
+					icons: {primary: "validateIcon"},
+					click: TODO},
+					{text: "Save",
+					click: TODO},
+					{text: "Cancel",
+					click: function() {
+						$( this ).dialog( "close" );
+						}
+					}
+				],
+			modal: true,
+			width: "auto",
+			height: "auto",
+		});
+		curDialog.initialise = initEditDocumentDialog;
+
+		//begin document viewer
+		curDialog = self.uiElements.dialogs.viewDocument = self.rootElement.find(".viewDocument").dialog({
+			autoOpen: false,
+			dialogClass: "mongoBrowser",
+			buttons:[
+					{text: "Cancel",
+					click: function() {
+						$( this ).dialog( "close" );
+						}
+					}
+				],
+			modal: true,
+			width: "auto",
+			height: "auto",
+		});
+		curDialog.initialise = initViewDocumentDialog;
+
 	}
 
 	/**
@@ -673,8 +788,14 @@ window.MongoBrowser = (function(){
 				expand: {name: "Expand recursively", callback: function(){collapseOrExpandResult($(this), false, true);}},
 				collapse: {name: "Collapse recursively", callback: function(){collapseOrExpandResult($(this), true, true);}},
 				"sep1": "---------",
-				edit: {name: "Edit Document..."},
-				view: {name: "View Document..."},
+				edit: {name: "Edit Document...", callback: function(){
+						var idx = parseInt($(this).attr("data-index"));
+						var curTab = getCurrentTab(self);
+						openDialog(self, "editDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection)}},
+				view: {name: "View Document...", callback: function(){
+						var idx = parseInt($(this).attr("data-index"));
+						var curTab = getCurrentTab(self);
+						openDialog(self, "viewDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection)}},
 				insert: {name: "Insert Document..."},
 				"sep2": "---------",
 				copy: {name: "Copy JSON", callback: function(){
