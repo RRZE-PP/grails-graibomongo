@@ -107,6 +107,7 @@ var MongoNS = (function(){
 		sh: sh,
 		execute: execute,
 		ObjectId: ObjectId,
+		NumberLong: NumberLong,
 		tojson: tojson
 	};
 

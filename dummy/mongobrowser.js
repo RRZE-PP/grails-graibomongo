@@ -155,8 +155,16 @@ window.MongoBrowser = (function(){
 			return base_print(indent, "bson_string_16x16.png", "string", key, val, "String");
 		}
 
-		function printNumber(key, val, indent) {
-			return base_print(indent, "bson_double_16x16.png", "number", key, val, "Double or Long or Int :(");
+		function printDouble(key, val, indent) {
+			return base_print(indent, "bson_double_16x16.png", "double", key, val, "Double");
+		}
+
+		function printInt(key, val, indent) {
+			return base_print(indent, "bson_integer_16x16.png", "int", key, val, "Int32");
+		}
+
+		function printLong(key, val, indent) {
+			return base_print(indent, "bson_integer_16x16.png", "long", key, val.toString(), "Int64");
 		}
 
 		function printBoolean(key, val, indent) {
@@ -180,14 +188,18 @@ window.MongoBrowser = (function(){
 				return printArray(key, val, indent);
 			else if(val instanceof MongoNS.ObjectId)
 				return printObjectId(key, val, indent);
+			else if(val instanceof MongoNS.NumberLong)
+				return printLong(key, val, indent);
 			else if(val instanceof RegExp)
 				return printRegExp(key, val, indent);
 			else if(val instanceof Date)
 				return printDate(key, val, indent);
 			else if(typeof val === "string" || val instanceof String)
 				return printString(key, val, indent);
-			else if(typeof val === "number" || val instanceof Number) //TODO: Int vs Double!
-				return printNumber(key, val, indent);
+			else if(typeof val === "number" || val instanceof Number && parseInt(val) === val)
+				return printInt(key, val, indent);
+			else if(typeof val === "number" || val instanceof Number)
+				return printDouble(key, val, indent);
 			else if(typeof val === "boolean")
 				return printBoolean(key, val, indent);
 			else if(val === null) //TODO: Int vs Double!
