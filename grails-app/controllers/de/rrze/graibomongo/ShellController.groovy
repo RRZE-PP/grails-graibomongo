@@ -81,6 +81,7 @@ class CursorInitRequest implements grails.validation.Validateable {
 	String query;
 	String ns;
 	Long nToReturn;
+	Integer nToSkip;
 
 	String toString(){
 		return ns + ".find(" + query + ").get(" + nToReturn + ")";
@@ -152,7 +153,7 @@ class ShellController {
 		def collection = request.ns.substring(request.ns.indexOf(".")+1);
 
 		def query = BsonDocument.parse(request.query);
-		def iterable = mc.getDatabase(database).getCollection(collection).find(query)//TODO: Handle other options
+		def iterable = mc.getDatabase(database).getCollection(collection).find(query).skip(request.nToSkip) //TODO: Handle other options
 		def cursor = iterable.iterator()
 
 		def nToReturn = request.nToReturn;
