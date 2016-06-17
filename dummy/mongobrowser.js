@@ -556,6 +556,7 @@ window.MongoBrowser = (function(){
 					return;
 				}
 				db.getCollection(collection).update({"_id": doc._id}, newObj);
+				$(this).dialog("close");
 			};
 			curDialog.dialog("option", "buttons", buttons);
 
