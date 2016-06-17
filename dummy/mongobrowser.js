@@ -704,22 +704,22 @@ window.MongoBrowser = (function(){
 	 * connectionManager, connectionSettings
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
 	 * @param {string} dialogName - the name of the dialog to open
-	 * @param {MongoBrowser~connectionPreset[] | MongoBrowser~connectionPreset} [initArg] -
-	 *                                      when set, the initialisation function of the
-	 *                                      dialog will be called (if it exists) and initArg passed as parameter <br />
-	 *                                      for further information, see the parameters to the functions in
-	 *                                      {@link dialogInitialisators }
+	 * @param {object...} [initArgs] -
+	 *                               when set, the initialisation function of the
+	 *                               dialog will be called (if it exists) and the initArgs passed as parameters <br />
+	 *                               for further information, see the parameters to the functions in
+	 *                               {@link dialogInitialisators }
 	 * @throws {ReferenceError} When no dialog with the name 'dialogName' exists
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 */
-	function openDialog(self, dialogName, initArg){
+	function openDialog(self, dialogName, initArgs){
 		var dialog = self.uiElements.dialogs[dialogName];
 		if(typeof dialog === "undefined")
 			throw new ReferenceError("No such dialog: "+dialogName);
 
-		if(typeof initArg !== "undefined" && typeof dialog.initialise !== "undefined")
-			dialog.initialise(initArg);
+		if(typeof initArgs !== "undefined" && typeof dialog.initialise !== "undefined")
+			dialog.initialise.apply(dialog, Array.prototype.splice.call(arguments, 2));
 
 		dialog.dialog("open");
 	}
