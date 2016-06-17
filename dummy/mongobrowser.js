@@ -133,7 +133,7 @@ window.MongoBrowser = (function(){
 			var ret = base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array", keys.length !== 0);
 
 			for(var i=0; i<keys.length; i++){
-				printLine(keys[i], val[keys[i]], indent + 1);
+				printLine("[" + keys[i] + "]", val[keys[i]], indent + 1);
 			}
 
 			return ret;
