@@ -430,6 +430,10 @@
 		vertical-align: middle;
 	}
 
+	.mongoBrowser .disabled {
+		color: #888888;
+	}
+
 	/* Tabs
 	 */
 

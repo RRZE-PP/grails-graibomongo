@@ -652,6 +652,16 @@ window.MongoBrowser = (function(){
 		curDialog.initialise();
 
 		curDialog.find(".tabContainer").tabs();
+		curDialog.find("#performAuthCheckbox").on("change", function(){
+			var curTab = self.uiElements.dialogs.connectionSettings.find("#connectionSettingsAuthenticationTab");
+			if($(this).prop("checked")){
+				curTab.find("#connectionSettingsEnableDisableSwitch").removeClass("disabled");
+				curTab.find("input, select").removeAttr("disabled");
+			}else{
+				curTab.find("#connectionSettingsEnableDisableSwitch").addClass("disabled");
+				curTab.find("input, select").slice(1).attr("disabled", "disabled"); //slice: don't affect checkbox
+			}
+		});
 
 		//begin document editor
 		curDialog = self.uiElements.dialogs.editDocument = self.rootElement.find(".editDocument").dialog({
