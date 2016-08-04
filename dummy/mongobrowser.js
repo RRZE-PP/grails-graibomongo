@@ -651,6 +651,7 @@ window.MongoBrowser = (function(){
 		curDialog.initialise = initConnectionSettingsDialog;
 		curDialog.initialise();
 
+		curDialog.find(".tabContainer").tabs();
 
 		//begin document editor
 		curDialog = self.uiElements.dialogs.editDocument = self.rootElement.find(".editDocument").dialog({
@@ -740,7 +741,7 @@ window.MongoBrowser = (function(){
 	 * @memberof MongoBrowser(NS)~
 	 */
 	function createTabEnvironment(self) {
-		var container = self.uiElements.tabs.container = self.rootElement.find(".tabContainer");
+		var container = self.uiElements.tabs.container = self.rootElement.find(".mainTabs.tabContainer");
 
 		var dummyTab = container.children("div").eq(0);
 		var dummyLink = container.find("li").eq(0);

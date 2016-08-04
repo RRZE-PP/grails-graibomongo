@@ -175,38 +175,6 @@
 		padding-left:230px;
 	}
 
-	.mongoBrowser .mainBody .tabContainer .tabList li {
-		background-color: white;
-		border: 1px solid #aaa;
-		border-radius: 3px;
-	}
-
-	.mongoBrowser .mainBody .tabContainer .tabList li a {
-		background-color: white;
-		position: relative;
-		top: 5px;
-		color:inherit;
-		font-family: inherit;
-		font-size: 12px;
-	}
-
-	.mongoBrowser .mainBody .tabContainer .tabList li a:focus {outline:0;}
-
-	.mongoBrowser .mainBody .tabContainer .tabList li.ui-state-active a {
-		z-index:3;
-	}
-
-	.mongoBrowser .mainBody .tabContainer .tabList li a span {
-		position: relative;
-		top: -7px;
-		padding-right:10px;
-	}
-
-	.mongoBrowser .mainBody .tabContainer .tabList li a img {
-		position: relative;
-		top: -3px;
-	}
-
 	.mongoBrowser .mainBody .tabContainer .tabList li .closeButton {
 		position: absolute;
 		top: 1px;
@@ -214,11 +182,6 @@
 		cursor: pointer;
 		z-index:3;
 		font-size:11px;
-	}
-
-	.mongoBrowser .mainBody .tabContainer .tab {
-		position: relative;
-		z-index:2;
 	}
 
 	.mongoBrowser .mainBody .tabContainer .tab .promptContainer {
@@ -378,6 +341,13 @@
 		height: 16px;
 	}
 
+	.mongoBrowser .window.connectionSettings .connectionTabs > div{
+		    background: white;
+		    margin: 30px 0 0 3px;
+		    border: 1px solid #aaaaaa;
+		    padding-top: 5px !important; /*overwrite a jquery setting*/
+	}
+
 	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset,
 	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset {
 		width: 100%;
@@ -459,6 +429,46 @@
 	.mongoBrowser img.typeIcon {
 		vertical-align: middle;
 	}
+
+	/* Tabs
+	 */
+
+		.mongoBrowser .tabContainer .tabList li {
+			background-color: white;
+			border: 1px solid #aaa;
+			border-radius: 3px;
+		}
+
+		.mongoBrowser .tabContainer .tabList li a {
+			background-color: white;
+			position: relative;
+			top: 5px;
+			color:inherit;
+			font-family: inherit;
+			font-size: 12px;
+		}
+
+		.mongoBrowser .tabContainer .tabList li a:focus {outline:0;}
+
+		.mongoBrowser .tabContainer .tabList li.ui-state-active a {
+			z-index:3;
+		}
+
+		.mongoBrowser .tabContainer .tabList li a span {
+			position: relative;
+			top: -7px;
+			padding-right:10px;
+		}
+
+		.mongoBrowser .tabContainer .tabList li a img {
+			position: relative;
+			top: -3px;
+		}
+
+		.mongoBrowser .tabContainer .tab {
+			position: relative;
+			z-index: 2;
+		}
 
  	/* Tables
  	 */
