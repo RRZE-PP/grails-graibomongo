@@ -520,7 +520,7 @@ window.MongoBrowser = (function(){
 
 			var name = self.uiElements.dialogs.connectionSettings.find(".connectionName").val();
 			var host = self.uiElements.dialogs.connectionSettings.find(".connectionHost").val();
-			var port = self.uiElements.dialogs.connectionSettings.find(".connectionPort").val();
+			var port = parseInt(self.uiElements.dialogs.connectionSettings.find(".connectionPort").val());
 
 			self.state.connectionPresets[idx] = {name:name, host:host, port:port};
 			self.uiElements.dialogs.connectionManager.initialise();
