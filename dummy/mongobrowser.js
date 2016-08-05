@@ -520,6 +520,8 @@ window.MongoBrowser = (function(){
 				this.find("[name=method]").val(preset.auth.method);
 				this.find("[name=performAuth]").prop("checked", preset.performAuth).change();
 			}
+
+			self.uiElements.dialogs.connectionSettings.tabs.tabs( "option", "active", 0 );
 		}
 
 		function saveNewConnectionPreset(){
@@ -676,9 +678,6 @@ window.MongoBrowser = (function(){
 				width: 380
 			});
 
-		curDialog.initialise = initConnectionSettingsDialog;
-		curDialog.initialise();
-
 		//create tabs in connection settings dialog, make IDs unique by adding this mongobrowser's instanceNo
 		curDialog.find(".tabList a").each(function(idx, obj){
 			var oldId = $(obj).attr("href");
@@ -705,6 +704,10 @@ window.MongoBrowser = (function(){
 			authElem.prop("checked", false);
 			authElem.change();
 		});
+
+		curDialog.initialise = initConnectionSettingsDialog;
+		curDialog.initialise();
+
 
 		//begin document editor
 		curDialog = self.uiElements.dialogs.editDocument = self.rootElement.find(".editDocument").dialog({
