@@ -96,38 +96,42 @@
 			</div>
 
 			<div class="connectionSettings window modal" title="Connection settings">
-				<div class="connectionTabs tabContainer">
-					<ul class="tabList">
-						<li><a href="#connectionSettingsConnectionTab">Connection</a></li>
-						<li><a href="#connectionSettingsAuthenticationTab">Authentication</a></li>
-					</ul>
-					<div id="connectionSettingsConnectionTab" class="tab">
-						<table class="alignmentHelper">
-							<tr><td>Name:</td> <td><input type="text" class="connectionName"> <br />Choose any connection name that will help you to identify this connection</td></tr>
-							<tr><td>&nbsp;</td><td></td></tr>
-							<tr><td>Address:</td><td><input type="text" class="connectionHost"> : <input type="number" value="27017" class="connectionPort" /> <br />Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name. <!--TODO: check if this is true with our grails client! --></td></tr>
-						</table>
-					</div>
-					<div id="connectionSettingsAuthenticationTab" class="tab">
-						<label><input type="checkbox" name="performAuth" /> Perform authentication</label>
-
-						<div class="connectionSettingsEnableDisableSwitch disabled">
-
+				<form>
+					<div class="connectionTabs tabContainer">
+						<ul class="tabList">
+							<li><a href="#connectionSettingsConnectionTab">Connection</a></li>
+							<li><a href="#connectionSettingsAuthenticationTab">Authentication</a></li>
+						</ul>
+						<div id="connectionSettingsConnectionTab" class="tab connectionSettingsConnectionTab">
 							<table class="alignmentHelper">
-								<label><tr><td>Database: </td><td><input type="text" name="adminDatabase" disabled="disabled"/> </td></tr></label>
-								<tr><td>&nbsp;</td>           <td>The admin database is unique in MongoDB. Users with normal access to the admin database have read and write access to <b>all databases</b>.</td></tr>
-								<label><tr><td>User Name: </td><td><input type="text" name="username" disabled="disabled"/></td></tr></label>
-								<label><tr><td>Password: </td><td><input type="password" name="password" disabled="disabled"/></td></tr></label><!--TODO: reveal pw button-->
-								<label><tr><td>Auth Mechanism:</td>
-									<td><select name="method" disabled="disabled">
-											<option value="scram-sha-1">SCRAM-SHA-1</option>
-											<option value="mongodb-cr">MONGODB-CR</option>
-										</select>
-									</td></tr></label>
+								<tr><td>Name:</td> <td><input type="text" class="connectionName"> <br />Choose any connection name that will help you to identify this connection</td></tr>
+								<tr><td>&nbsp;</td><td></td></tr>
+								<tr><td>Address:</td><td><input type="text" class="connectionHost"> : <input type="number" value="27017" class="connectionPort" /> <br />Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name. <!--TODO: check if this is true with our grails client! --></td></tr>
 							</table>
 						</div>
+						<div id="connectionSettingsAuthenticationTab" class="tab connectionSettingsAuthenticationTab">
+							<label><input type="checkbox" name="performAuth" /> Perform authentication</label>
+
+							<div class="connectionSettingsEnableDisableSwitch disabled">
+
+								<table class="alignmentHelper">
+									<label><tr><td>Database: </td><td><input type="text" name="adminDatabase" disabled="disabled"/> </td></tr></label>
+									<tr><td>&nbsp;</td>           <td>The admin database is unique in MongoDB. Users with normal access to the admin database have read and write access to <b>all databases</b>.</td></tr>
+									<label><tr><td>User Name: </td><td><input type="text" name="username" disabled="disabled"/></td></tr></label>
+									<label><tr><td>Password: </td><td><input type="password" name="password" disabled="disabled"/></td></tr></label><!--TODO: reveal pw button-->
+									<tr><td>&nbsp;</td><td>Please bear in mind: This password will possibly be stored in plain text in your browser and possibly sent
+									in plain text over your internet connection.</td></tr>
+									<label><tr><td>Auth Mechanism:</td>
+										<td><select name="method" disabled="disabled">
+												<option value="scram-sha-1">SCRAM-SHA-1</option>
+												<option value="mongodb-cr">MONGODB-CR</option>
+											</select>
+										</td></tr></label>
+								</table>
+							</div>
+						</div>
 					</div>
-				</div>
+				</form>
 			</div>
 
 			<div class="editDocument window modal" title="Edit Document">
@@ -156,12 +160,26 @@
 
 	<script>
 	m = MongoBrowser($("body")[0],
-		{connectionPresets: [ {name: "conn1",
+		{connectionPresets: [ {name: "withauth",
 								 host: "faui00q",
-								  port: 27017},
-								{name: "conn2",
+								  port: 27017,
+								  performAuth: true,
+								  auth: {
+								  	adminDatabase: "admin",
+								  	username: "test",
+								  	password: "secret",
+								  	method: "scram-sha-1"
+								  }},
+								{name: "without",
 								 host: "faui00q",
-								  port: 27017}]
+								  port: 27017,
+								  performAuth: false,
+								  auth: {
+								  	adminDatabase: "admin",
+								  	username: "",
+								  	password: "",
+								  	method: "scram-sha-1"
+								  }}]
 		})
 	</script>
 	</body>

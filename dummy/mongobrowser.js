@@ -507,9 +507,19 @@ window.MongoBrowser = (function(){
 				this.mode = "clone";
 			}
 
+			this.find("form")[0].reset();
+
 			this.find(".connectionName").val(preset.name);
 			this.find(".connectionHost").val(preset.host);
 			this.find(".connectionPort").val(preset.port);
+
+			if(preset.performAuth && typeof preset.auth !== undefined){
+				this.find("[name=adminDatabase]").val(preset.auth.adminDatabase);
+				this.find("[name=username]").val(preset.auth.username);
+				this.find("[name=password]").val(preset.auth.password);
+				this.find("[name=method]").val(preset.auth.method);
+				this.find("[name=performAuth]").prop("checked", preset.performAuth).change();
+			}
 		}
 
 		function saveNewConnectionPreset(){
@@ -527,11 +537,20 @@ window.MongoBrowser = (function(){
 				return;
 			var idx = parseInt(curLine.attr("data-connectionIndex"));
 
-			var name = self.uiElements.dialogs.connectionSettings.find(".connectionName").val();
-			var host = self.uiElements.dialogs.connectionSettings.find(".connectionHost").val();
-			var port = parseInt(self.uiElements.dialogs.connectionSettings.find(".connectionPort").val());
+			var curDialog = self.uiElements.dialogs.connectionSettings
 
-			self.state.connectionPresets[idx] = {name:name, host:host, port:port};
+			var name = curDialog.find(".connectionName").val();
+			var host = curDialog.find(".connectionHost").val();
+			var port = parseInt(curDialog.find(".connectionPort").val());
+
+			var adminDatabase = curDialog.find("[name=adminDatabase]").val();
+			var username = curDialog.find("[name=username]").val();
+			var password = curDialog.find("[name=password]").val();
+			var method = curDialog.find("[name=method]").val();
+			var performAuth = curDialog.find("[name=performAuth]").prop("checked");
+
+			self.state.connectionPresets[idx] = {name:name, host:host, port:port, performAuth: performAuth,
+					auth: {adminDatabase: adminDatabase, username: username, password: password, method: method}};
 			self.uiElements.dialogs.connectionManager.initialise();
 		}
 
@@ -662,16 +681,15 @@ window.MongoBrowser = (function(){
 
 		//create tabs in connection settings dialog, make IDs unique by adding this mongobrowser's instanceNo
 		curDialog.find(".tabList a").each(function(idx, obj){
-			debugger;
 			var oldId = $(obj).attr("href");
 			var newId = oldId + "-" + self.instanceNo;
 
 			curDialog.find(oldId).attr("id", newId.slice(1));
 			$(obj).attr("href", newId);
 		});
-		curDialog.find(".tabContainer").tabs();
+		curDialog.tabs = curDialog.find(".tabContainer").tabs();
 
-		curDialog.find("[name=performAuth]").on("change", function(){
+		curDialog.find("[name='performAuth']").on("change", function(){
 			var curTab = self.uiElements.dialogs.connectionSettings.find(".connectionSettingsAuthenticationTab");
 			if($(this).prop("checked")){
 				curTab.find(".connectionSettingsEnableDisableSwitch").removeClass("disabled");
@@ -680,6 +698,12 @@ window.MongoBrowser = (function(){
 				curTab.find(".connectionSettingsEnableDisableSwitch").addClass("disabled");
 				curTab.find("input, select").slice(1).attr("disabled", "disabled"); //slice: don't affect checkbox
 			}
+		});
+		curDialog.find("form").on("reset", function(){
+			//force change event
+			var authElem = self.uiElements.dialogs.connectionSettings.find("[name='performAuth']");
+			authElem.prop("checked", false);
+			authElem.change();
 		});
 
 		//begin document editor
@@ -932,10 +956,22 @@ window.MongoBrowser = (function(){
 	 * @param {string} name - the name of the connection
 	 * @param {string} host - the host of the connection (ipv4, ipv6, domain)
 	 * @param {number} port - the port of the connection
+	 * @param {boolean} [performAuth=false] - whether to perform an authentication given the following parameters
+	 * @param {string} [adminDatabase=admin] - the admin database which stores the user credentials and roles
+	 * @param {string} [username=] - the username to authenticate with
+	 * @param {string} [password=] - the password to authenticate with
+	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
 	 * @memberof MongoBrowser#
 	 */
-	function addConnectionPreset(self, name, host, port){
-		self.state.connectionPresets.push({name: name, host: host, port:port});
+	function addConnectionPreset(self, name, host, port, performAuth, adminDatabase, username, password, method){
+		if(typeof performAuth === "undefined"){ performAuth = false; }
+		if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
+		if(typeof username === "undefined"){ username = ""; }
+		if(typeof password === "undefined"){ password = ""; }
+		if(typeof method === "undefined"){ method = "scram-sha-1"; }
+
+		self.state.connectionPresets.push({name:name, host:host, port:port, performAuth: performAuth,
+					auth: {adminDatabase: adminDatabase, username: username, password: password, method: method}});
 		self.uiElements.dialogs.connectionManager.initialise(self.uiElements.dialogs.connectionManager, self.state.connectionPresets);
 	}
 
@@ -1016,6 +1052,12 @@ window.MongoBrowser = (function(){
  * @property {string} name - the name of the connection
  * @property {string} host - the host of the connection (ipv4, ipv6, domain)
  * @property {number} port - the port of the connection
+ * @property {boolean} performAuth - whether to perform an authentication given the following parameters
+ * @property {Object} auth - information for the authentication
+ * @property {string} auth.adminDatabase - the admin database which stores the user credentials and roles
+ * @property {string} auth.username - the username to authenticate with
+ * @property {string} auth.password - the password to authenticate with
+ * @property {string} auth.method - one of ["scram-sha-1", "mongodb-cr"]
  */
 
 /**
