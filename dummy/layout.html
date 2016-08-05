@@ -109,24 +109,21 @@
 						</table>
 					</div>
 					<div id="connectionSettingsAuthenticationTab" class="tab">
-						<label><input id="performAuthCheckbox" type="checkbox" name="performAuth" /> Perform authentication</label>
+						<label><input type="checkbox" name="performAuth" /> Perform authentication</label>
 
-						<div id="connectionSettingsEnableDisableSwitch" class="disabled">
+						<div class="connectionSettingsEnableDisableSwitch disabled">
 
 							<table class="alignmentHelper">
-								<tr><td><label for="authSetting-adminDatabase">Database: </label></td>
-									<td><input id="authSetting-adminDatabase" type="text" name="adminDatabase" disabled="disabled"/> <br />
-									The admin database is unique in MongoDB. Users with normal access to the admin database have read and write access to <b>all databases</b>.
-									</td>
-								</tr>
-								<tr><td><label for="authSetting-username">User Name: </label></td><td><input id="authSetting-username" type="text" name="username" disabled="disabled"/></td></tr>
-								<tr><td><label for="authSetting-password">Password: </label></td><td><input id="authSetting-password" type="password" name="password" disabled="disabled"/></td></tr><!--TODO: reveal pw button-->
-								<tr><td><label for="authSetting-method">Auth Mechanism: </label></td>
-									<td><select id="authSetting-method" name="method" disabled="disabled">
+								<label><tr><td>Database: </td><td><input type="text" name="adminDatabase" disabled="disabled"/> </td></tr></label>
+								<tr><td>&nbsp;</td>           <td>The admin database is unique in MongoDB. Users with normal access to the admin database have read and write access to <b>all databases</b>.</td></tr>
+								<label><tr><td>User Name: </td><td><input type="text" name="username" disabled="disabled"/></td></tr></label>
+								<label><tr><td>Password: </td><td><input type="password" name="password" disabled="disabled"/></td></tr></label><!--TODO: reveal pw button-->
+								<label><tr><td>Auth Mechanism:</td>
+									<td><select name="method" disabled="disabled">
 											<option value="scram-sha-1">SCRAM-SHA-1</option>
 											<option value="mongodb-cr">MONGODB-CR</option>
 										</select>
-									</td></tr>
+									</td></tr></label>
 							</table>
 						</div>
 					</div>

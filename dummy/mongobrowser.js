@@ -351,12 +351,21 @@ window.MongoBrowser = (function(){
 			tabs: {}
 		}
 
+		self.instanceNo = MongoBrowser.instances++;
+
 		initUIElements(self);
 
 		self.rootElement.appendTo(appendTo);
 		self.rootElement.addClass("mongoBrowser");
 		self.rootElement.css("display", "block");
 	}
+
+	/** The total number of MongoBrowsers created to savely create unique IDs
+	 * @static
+	 * @memberof MongoBrowser
+	 * @type {number}
+	 */
+	MongoBrowser.instances = 0;
 
 	/**
 	 * Adds a new tab to the MongoBrowser's gui.
@@ -651,14 +660,24 @@ window.MongoBrowser = (function(){
 		curDialog.initialise = initConnectionSettingsDialog;
 		curDialog.initialise();
 
+		//create tabs in connection settings dialog, make IDs unique by adding this mongobrowser's instanceNo
+		curDialog.find(".tabList a").each(function(idx, obj){
+			debugger;
+			var oldId = $(obj).attr("href");
+			var newId = oldId + "-" + self.instanceNo;
+
+			curDialog.find(oldId).attr("id", newId.slice(1));
+			$(obj).attr("href", newId);
+		});
 		curDialog.find(".tabContainer").tabs();
-		curDialog.find("#performAuthCheckbox").on("change", function(){
-			var curTab = self.uiElements.dialogs.connectionSettings.find("#connectionSettingsAuthenticationTab");
+
+		curDialog.find("[name=performAuth]").on("change", function(){
+			var curTab = self.uiElements.dialogs.connectionSettings.find(".connectionSettingsAuthenticationTab");
 			if($(this).prop("checked")){
-				curTab.find("#connectionSettingsEnableDisableSwitch").removeClass("disabled");
+				curTab.find(".connectionSettingsEnableDisableSwitch").removeClass("disabled");
 				curTab.find("input, select").removeAttr("disabled");
 			}else{
-				curTab.find("#connectionSettingsEnableDisableSwitch").addClass("disabled");
+				curTab.find(".connectionSettingsEnableDisableSwitch").addClass("disabled");
 				curTab.find("input, select").slice(1).attr("disabled", "disabled"); //slice: don't affect checkbox
 			}
 		});
