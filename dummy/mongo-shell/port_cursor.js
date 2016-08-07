@@ -234,7 +234,7 @@ DBClientCursor.prototype._assembleInit = function() {
 
 DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ host) {
     // If this is a reply to our initial command request.
-    if (this._isCommand && this.cursorId == 0) {
+    if (this._isCommand && this.cursorId == NumberLong(0)) {
         this.commandDataReceived();
         return;
     }
@@ -254,13 +254,16 @@ DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ ho
         }
 
         // 0 indicates no longer valid (dead)
-        this.cursorId = 0;
+        this.cursorId = NumberLong(0);
     }
 
     if (this.cursorId == 0 || !(this.opts & QueryOptions.QueryOption_CursorTailable)) {
         // only set initially: we don't want to kill it on end of data
         // if it's a tailable cursor
-        this.cursorId = qr.cursorId;
+        if(typeof qr.cursorId === "number")
+            this.cursorId = NumberLong(qr.cursorId);
+        else if(typeof qr.cursorId === "string" && qr.cursorId.startsWith("NumberLong(\"") && qr.cursorId.endsWith("\")"))
+            this.cursorId = NumberLong(qr.cursorId.substring(12, qr.cursorId.length-2))
     }
 
     this.batch.nReturned = qr.nReturned;

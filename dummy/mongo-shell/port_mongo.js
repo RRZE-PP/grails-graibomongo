@@ -114,8 +114,6 @@ Mongo.prototype.cursorFromId = function(ns, cursorId, batchSize){
 
 	if(typeof cursorId === "number")
 		cursorId = NumberLong(cursorId);
-    	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
-    	//(cursorID kann schon kaputt sein!)
 
 	var cursor = new Cursor(ns, cursorId, 0, 0, this.getConnectionData());
 

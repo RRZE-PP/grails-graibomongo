@@ -117,8 +117,16 @@ class CursorInitRequest implements grails.validation.Validateable {
 class RequestMoreRequest implements grails.validation.Validateable {
 	ConnectionData connection;
 
-	Long cursorId;
+	String cursorId;
 	Long nToReturn;
+
+	def getCursorId(){
+		if(this.cursorId && this.cursorId instanceof String && this.cursorId.startsWith("NumberLong(\"") && this.cursorId.endsWith("\")")){
+			this.cursorId = Long.valueOf(this.cursorId[12 .. -3]);
+		}
+
+		return this.cursorId
+	}
 
 	String toString(){
 		return "Cursor(" + cursorId + ").get(" + nToReturn + ")";
@@ -147,14 +155,12 @@ class ShellController {
 
 		def conn = request.connection
 
-		//TODO: Verbindungsfehler abfangen
 		try{
 			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
 			                                  conn.getAuthList(),
 			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
 
 	    	Jongo jong = new Jongo(mc.getDB(request.database))
-	    	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
 
 			def result = jong.runCommand(request.command).map(new RawResultHandler());
 
@@ -221,7 +227,7 @@ class ShellController {
 			render([nReturned: data.size(),
 					data: data,
 					resultFlags: 0,
-					cursorId: cursorId]  as JSON)
+					cursorId: "NumberLong(\"" + cursorId + "\")"]  as JSON)
 
 		}catch(IllegalArgumentException e){
 			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()])
@@ -272,7 +278,7 @@ class ShellController {
 			render([nReturned: data.size(),
 					data: data,
 					resultFlags: 0,
-					cursorId: cursorId] as JSON)
+					cursorId: "NumberLong(\"" + cursorId + "\")"] as JSON)
 		}else{
 			render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
 		}
