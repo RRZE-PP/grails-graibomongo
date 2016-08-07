@@ -476,7 +476,8 @@ window.MongoBrowser = (function(){
 					return;
 				var idx = parseInt(curLine.attr("data-connectionIndex"));
 				var preset= self.state.connectionPresets[idx];
-				connect(self, preset.host, preset.port, "test");
+				connect(self, preset.host, preset.port, "test", //todo put correct database here
+					preset.performAuth, preset.auth.adminDatabase, preset.auth.username, preset.auth.password, preset.auth.method);
 		}
 
 		/**
@@ -990,13 +991,28 @@ window.MongoBrowser = (function(){
 	 * mongo database. They are stored (if at all) only on the server to which we connect
 	 * using server-connections. We call them db-connections.
 	 * @param {MongoBrowser} self  - Please see Class/Namespace description!
-	 * @param {string} hostname   - the hostname under which the mongodb is accessible
-	 * @param {number} port       - the port at which the mongodb listens
+	 * @param {string} hostname   - the hostname under which the mongodb is accessible for the db-connection
+	 * @param {number} port       - the port at which the mongodb listens for the db-connection
 	 * @param {string} database   - the database name to connect to
+	 * @param {boolean} [performAuth=false] - whether to perform an authentication given the following parameters
+	 * @param {string} [adminDatabase=admin] - the admin database which stores the user credentials and roles
+	 * @param {string} [username=] - the username to authenticate with
+	 * @param {string} [password=] - the password to authenticate with
+	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
 	 * @memberof MongoBrowser#
 	 */
-	function connect(self, hostname, port, database){
-		var db = MongoNS.simple_connect(hostname, port, database);
+	function connect(self, hostname, port, database, performAuth, adminDatabase, username, password, method){
+		if(typeof performAuth === "undefined"){ performAuth = false; }
+		if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
+		if(typeof username === "undefined"){ username = ""; }
+		if(typeof password === "undefined"){ password = ""; }
+		if(typeof method === "undefined"){ method = "scram-sha-1"; }
+
+		if(performAuth){
+			var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+		}else{
+			var db = MongoNS.simple_connect(hostname, port, database);
+		}
 		self.state.connections.push(db.getMongo());
 
 		var mongo = db.getMongo();
