@@ -1,6 +1,10 @@
 package de.rrze.graibomongo
 
 import com.mongodb.MongoClient
+import com.mongodb.ServerAddress
+import com.mongodb.MongoCredential
+import com.mongodb.MongoClientOptions
+import com.mongodb.MongoTimeoutException
 import com.mongodb.client.MongoDatabase
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
@@ -42,13 +46,35 @@ class AuthData  implements grails.validation.Validateable {
 		authDatabase(nullable: true)
 		authMechanism(nullable: true)
 	}
+
 }
 
 class ConnectionData implements grails.validation.Validateable {
 	String hostname;
 	Integer port;
 
+	Boolean performAuth;
 	AuthData auth;
+
+	List<MongoCredential> getAuthList(){
+		if(performAuth != true)
+			return new ArrayList<MongoCredential>();
+
+		ArrayList<MongoCredential> credentials = new ArrayList<MongoCredential>();
+		//TODO: check for encoding issues in password with toCharArray!
+		switch(auth.authMechanism){
+			case "scram-sha-1":
+				credentials.push(MongoCredential.createScramSha1Credential(auth.user, auth.authDatabase, auth.password.toCharArray()));
+				break;
+			case "mongodb-cr":
+				credentials.push(MongoCredential.createMongoCRCredential(auth.user, auth.authDatabase, auth.password.toCharArray()));
+				break;
+			default:
+				throw new IllegalArgumentException("Unknown auth mechanism");
+		}
+
+		return credentials;
+	}
 
     def beforeValidate() {
         hostname = hostname ?: '127.0.0.1'
@@ -101,6 +127,7 @@ class RequestMoreRequest implements grails.validation.Validateable {
 
 class ShellController {
 
+	final int SERVER_SELECT_TIMEOUT_MS = 1000;
 	static cursors = [:];
 
     def index(){
@@ -120,18 +147,26 @@ class ShellController {
 
 		def conn = request.connection
 
-		//TODO: auth
 		//TODO: Verbindungsfehler abfangen
-		MongoClient mc = new MongoClient(conn.hostname, conn.port);
-    	Jongo jong = new Jongo(mc.getDB(request.database))
-    	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
+		try{
+			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
+			                                  conn.getAuthList(),
+			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
 
-    	//TODO: JSON-parse-fehler in request.command abfangen
-		def result = jong.runCommand(request.command).map(new RawResultHandler());
+	    	Jongo jong = new Jongo(mc.getDB(request.database))
+	    	//TODO: Javascript Integer gehen nur bis 2^53-1 => eigentlich muessen wir ueberall BSON Longs verwenden
 
-		mc.close()
+			def result = jong.runCommand(request.command).map(new RawResultHandler());
 
-		render result as JSON
+			mc.close()
+
+			render result as JSON
+
+		}catch(IllegalArgumentException e){
+			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()])
+		}catch(MongoTimeoutException e){
+			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()])
+		}
 	}
 
 	def initCursor(CursorInitRequest request){
@@ -147,44 +182,52 @@ class ShellController {
 
 		def conn = request.connection
 
-		MongoClient mc = new MongoClient(conn.hostname, conn.port);
+		try{
+			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
+			                                  conn.getAuthList(),
+			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
 
-		def database = request.ns.substring(0, request.ns.indexOf("."));
-		def collection = request.ns.substring(request.ns.indexOf(".")+1);
+			def database = request.ns.substring(0, request.ns.indexOf("."));
+			def collection = request.ns.substring(request.ns.indexOf(".")+1);
 
-		def query = BsonDocument.parse(request.query);
-		def iterable = mc.getDatabase(database).getCollection(collection).find(query).skip(request.nToSkip) //TODO: Handle other options
-		def cursor = iterable.iterator()
+			def query = BsonDocument.parse(request.query);
+			def iterable = mc.getDatabase(database).getCollection(collection).find(query).skip(request.nToSkip) //TODO: Handle other options
+			def cursor = iterable.iterator()
 
-		def nToReturn = request.nToReturn;
-		if(nToReturn == 0)
-			nToReturn = 20;
+			def nToReturn = request.nToReturn;
+			if(nToReturn == 0)
+				nToReturn = 20;
 
-		def data = []
-		for(int i=0; i<nToReturn; i++){
-			def item = cursor.tryNext()
-			if(item != null){
-				data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
-			}else{
-				break
+			def data = []
+			for(int i=0; i<nToReturn; i++){
+				def item = cursor.tryNext()
+				if(item != null){
+					data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
+				}else{
+					break
+				}
 			}
+
+			//TODO: Handle all iterated
+			def scursor = cursor.getServerCursor()
+			def cursorId = 0;
+			if(scursor != null){
+				cursorId = scursor?.getId();
+				cursors[conn.hostname + conn.port + cursorId] = [cursor, mc]
+			}else{
+				mc.close()
+			}
+
+			render([nReturned: data.size(),
+					data: data,
+					resultFlags: 0,
+					cursorId: cursorId]  as JSON)
+
+		}catch(IllegalArgumentException e){
+			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()])
+		}catch(MongoTimeoutException e){
+			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()])
 		}
-
-		//TODO: Handle all iterated
-		def scursor = cursor.getServerCursor()
-		def cursorId = 0;
-		if(scursor != null){
-			cursorId = scursor?.getId();
-			cursors[conn.hostname + conn.port + cursorId] = [cursor, mc]
-		}else{
-			mc.close()
-		}
-
-		render([nReturned: data.size(),
-				data: data,
-				resultFlags: 0,
-				cursorId: cursorId]  as JSON)
-
 	}
 
 	def requestMore(RequestMoreRequest request){
