@@ -523,6 +523,9 @@ window.MongoBrowser = (function(){
 			}
 
 			self.uiElements.dialogs.connectionSettings.tabs.tabs( "option", "active", 0 );
+
+			this.find(".connectionSettingsAuthenticationTab [name='password']").attr("type", "password");
+			this.find(".connectionSettingsAuthenticationTab .revealPasswordButton").text("Show PW");
 		}
 
 		function saveNewConnectionPreset(){
@@ -704,6 +707,19 @@ window.MongoBrowser = (function(){
 			var authElem = self.uiElements.dialogs.connectionSettings.find("[name='performAuth']");
 			authElem.prop("checked", false);
 			authElem.change();
+		});
+
+		curDialog.find(".revealPasswordButton").on("click", function(){
+			var passwordInput = self.uiElements.dialogs.connectionSettings.find(".connectionSettingsAuthenticationTab [name='password']");
+			if(passwordInput.attr("type") === "password"){
+				passwordInput.attr("type", "text");
+				$(this).text("Hide PW");
+			}else{
+				passwordInput.attr("type", "password");
+				$(this).text("Show PW");
+			}
+
+			return false;
 		});
 
 		curDialog.initialise = initConnectionSettingsDialog;
