@@ -18,6 +18,36 @@ Mongo.prototype.getMaxWireVersion = function(){
 	return 10;
 }
 
+Mongo.prototype.auth = function(){
+	throw Error("Auth not implemented. Pass the credentials to simple_connect for implicit authentication");
+    // auto conn = getConnection(args);
+    // if (!conn)
+    //     uasserted(ErrorCodes::BadValue, "no connection");
+
+    // BSONObj params;
+    // switch (args.length()) {
+    //     case 1:
+    //         params = ValueWriter(cx, args.get(0)).toBSON();
+    //         break;
+    //     case 3:
+    //         params =
+    //             BSON(saslCommandMechanismFieldName << "MONGODB-CR" << saslCommandUserDBFieldName
+    //                                                << ValueWriter(cx, args[0]).toString()
+    //                                                << saslCommandUserFieldName
+    //                                                << ValueWriter(cx, args[1]).toString()
+    //                                                << saslCommandPasswordFieldName
+    //                                                << ValueWriter(cx, args[2]).toString());
+    //         break;
+    //     default:
+    //         uasserted(ErrorCodes::BadValue, "mongoAuth takes 1 object or 3 string arguments");
+    // }
+
+    // conn->auth(params);
+
+    // args.rval().setBoolean(true);
+// }
+}
+
 Mongo.prototype.runCommand = function(database, cmdObj, options){
 	print("====RUNCOMMAND")
 	assert(typeof database === "string", "the database parameter to runCommand must be a string");
@@ -149,7 +179,7 @@ Mongo.prototype.update = function(ns, query, obj, upsert) {
 
 };
 
-function simple_connect(hostname, port, database, user, password, authDatabase, authMethod){
+function simple_connect(hostname, port, database, user, password, authDatabase, authMethod, performAuth){
 	if(arguments.length < 3)
 		throw Error("Hostname, port and database are required");
 
@@ -175,12 +205,13 @@ function simple_connect(hostname, port, database, user, password, authDatabase, 
 	mongo.connectionData = {
 		hostname: hostname,
 		port: port,
+		performAuth: performAuth ? true : false, //"cast" to boolean
 		auth: {
 			user: isDefined(user, null),
 			password: isDefined(password, null),
 
-			database: isDefined(database, null),
-			mechanism: isDefined(database, null),
+			authDatabase: isDefined(authDatabase, null),
+			authMechanism: isDefined(authMethod, null),
 		}
 	}
 
