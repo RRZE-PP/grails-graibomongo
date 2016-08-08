@@ -54,10 +54,12 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
 	assert(typeof cmdObj === "object", "the cmdObj parameter to runCommand must be an object");
 	assert(typeof options === "number", "the options parameter to runCommand must be a number");
 
+	var stringifyFunctions = function (key, val){ if(typeof val === "function") return val.toString(); return val};
+
 	var result = null;
 	$.ajax("/shell/runCommand", {
 			async: false,
-			data: JSON.stringify({database: database, command: JSON.stringify(cmdObj), options: options, connection: this.getConnectionData()}),
+			data: JSON.stringify({database: database, command: JSON.stringify(cmdObj, stringifyFunctions), options: options, connection: this.getConnectionData()}),
             method: "POST",
             contentType: "application/json; charset=utf-8"
 		})
