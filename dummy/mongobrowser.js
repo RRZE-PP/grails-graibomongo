@@ -56,6 +56,9 @@ window.MongoBrowser = (function(){
 									   prompt: tab.find(".prompt textarea"),
 									   tab: this.uiElements.tab,
 									   link: this.uiElements.link,
+									   printContainer: tab.find(".printContainer"),
+									   printedLines: tab.find(".printContainer pre"),
+									   resultsTable: tab.find(".resultsTable"),
 									   results: tab.find(".resultsTable tbody"),
 									   iterate: {
 									    	max: tab.find(".maxIterate"),
@@ -214,32 +217,60 @@ window.MongoBrowser = (function(){
 
 		var startTime = $.now();
 
-		var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
-		if(ret instanceof MongoNS.DBQuery)
-			ret = ret._exec()
+		//TODO: this fails if we yield the js thread (e.g. in an asynchronous ajax call?) before finishing MongoNS.execute and resetting the print fct
+		var printedLines = []
+		var oldPrint = MongoNS.__namespacedPrint;
+		MongoNS.__namespacedPrint = function(line){
+			printedLines.push(line);
+		}
+		try {
+			var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
+			if(ret instanceof MongoNS.DBQuery)
+				ret = ret._exec()
+		}catch(e){
+			var ret = undefined;
+			MongoNS.__namespacedPrint(e.toString());
+		}
 
 		var duration = $.now() - startTime;
 		this.uiElements.info.time.text(duration/1000);
 
+		this.uiElements.printContainer.hide()
+		this.uiElements.resultsTable.hide();
+		this.uiElements.printedLines.text("");
 		this.uiElements.results.children().remove();
 
-		if(ret instanceof MongoNS.Cursor){
-			this.state.displayedResult = [];
-			for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
-				var val = ret.next();
-				this.state.displayedResult.push(val);
-				printLine("(" + (i + 1) + ")", val, 0).attr("data-index", i);
-			}
-		}else{
-			this.state.displayedResult = [ret];
-			printLine("(" + 1 + ")", ret, 0).attr("data-index", 0);
-		}
-		this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
-		this.uiElements.results.children("[data-indent]").each(function(index, elem){
-			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
-		});
+		if(printedLines.length !== 0){
+			this.uiElements.printContainer.show();
 
-		return ret;
+			var text = "";
+			for(var i=0; i < printedLines.length; i++){
+				text += printedLines[i] + "\n";
+			}
+			self.uiElements.printedLines.text(text);
+		}
+
+		if(typeof ret !== "undefined"){
+			this.uiElements.resultsTable.show();
+
+			if(ret instanceof MongoNS.Cursor){
+				this.state.displayedResult = [];
+				for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
+					var val = ret.next();
+					this.state.displayedResult.push(val);
+					printLine("(" + (i + 1) + ")", val, 0).attr("data-index", i);
+				}
+			}else{
+				this.state.displayedResult = [ret];
+				printLine("(" + 1 + ")", ret, 0).attr("data-index", 0);
+			}
+			this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
+			this.uiElements.results.children("[data-indent]").each(function(index, elem){
+				$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
+			});
+
+			return ret;
+		}
 	}
 
 

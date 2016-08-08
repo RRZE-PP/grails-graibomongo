@@ -49,7 +49,7 @@ Mongo.prototype.auth = function(){
 }
 
 Mongo.prototype.runCommand = function(database, cmdObj, options){
-	print("====RUNCOMMAND")
+	console.log("====RUNCOMMAND")
 	assert(typeof database === "string", "the database parameter to runCommand must be a string");
 	assert(typeof cmdObj === "object", "the cmdObj parameter to runCommand must be an object");
 	assert(typeof options === "number", "the options parameter to runCommand must be a number");
@@ -70,7 +70,7 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
 
 	return result;
 
-	print("Normally would send to server. For development returning a listCollections result");
+	console.log("Normally would send to server. For development returning a listCollections result");
 	return {
 		"cursor" : {
 			"id" : NumberLong(0),

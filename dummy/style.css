@@ -266,6 +266,17 @@
 		padding: 10px;
 	}
 
+	.mongoBrowser .mainBody .tabContainer .printContainer pre {
+		width: 100%;
+		overflow-x: scroll;
+		padding: 5px;
+		margin: 0px;
+		color: white;
+		background: #494c4e;
+		font-family: monospace;
+		min-height: 150px;
+	}
+
 /* Status bar
  */
 
