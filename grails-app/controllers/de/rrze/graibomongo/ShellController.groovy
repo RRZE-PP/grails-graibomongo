@@ -106,11 +106,17 @@ class CursorInitRequest implements grails.validation.Validateable {
 
 	String query;
 	String ns;
+
 	Long nToReturn;
 	Integer nToSkip;
+	String fieldsToReturn;
+
+	def beforeValidate(){
+		fieldsToReturn = fieldsToReturn ?: "{}"
+	}
 
 	String toString(){
-		return ns + ".find(" + query + ").get(" + nToReturn + ")";
+		return ns + ".find(" + query + ", " + fieldsToReturn +").get(" + nToReturn + ")";
 	}
 }
 
@@ -152,6 +158,7 @@ class ShellController {
 			render([error: 'Invalid command sent'] as JSON)
 			return
 		}
+		println(request)
 
 		def conn = request.connection
 
@@ -185,6 +192,7 @@ class ShellController {
 			render([error: 'Invalid command sent'] as JSON)
 			return
 		}
+		println(request)
 
 		def conn = request.connection
 
@@ -197,7 +205,10 @@ class ShellController {
 			def collection = request.ns.substring(request.ns.indexOf(".")+1);
 
 			def query = BsonDocument.parse(request.query);
-			def iterable = mc.getDatabase(database).getCollection(collection).find(query).skip(request.nToSkip) //TODO: Handle other options
+			def iterable = mc.getDatabase(database).getCollection(collection)
+									.find(query)
+									.projection(BsonDocument.parse(request.fieldsToReturn))
+									.skip(request.nToSkip) //TODO: Handle other options
 			def cursor = iterable.iterator()
 
 			def nToReturn = request.nToReturn;
@@ -246,6 +257,7 @@ class ShellController {
 			render([error: 'Invalid command sent'] as JSON)
 			return
 		}
+		println(request)
 
 		def conn = request.connection
 
