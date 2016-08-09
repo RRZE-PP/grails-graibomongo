@@ -204,6 +204,8 @@ class ShellController {
 			def database = request.ns.substring(0, request.ns.indexOf("."));
 			def collection = request.ns.substring(request.ns.indexOf(".")+1);
 
+			def isFindOne = false;
+
 			def query = BsonDocument.parse(request.query);
 			def iterable = mc.getDatabase(database).getCollection(collection)
 									.find(query)
@@ -214,6 +216,10 @@ class ShellController {
 			def nToReturn = request.nToReturn;
 			if(nToReturn == 0)
 				nToReturn = 20;
+			if(nToReturn == -1){
+				isFindOne = true;
+				nToReturn = 1;
+			}
 
 			def data = []
 			for(int i=0; i<nToReturn; i++){
@@ -228,7 +234,7 @@ class ShellController {
 			//TODO: Handle all iterated
 			def scursor = cursor.getServerCursor()
 			def cursorId = 0;
-			if(scursor != null){
+			if(!isFindOne && scursor != null){
 				cursorId = scursor?.getId();
 				cursors[conn.hostname + conn.port + cursorId] = [cursor, mc]
 			}else{
