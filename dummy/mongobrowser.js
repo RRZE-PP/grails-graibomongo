@@ -224,9 +224,15 @@ window.MongoBrowser = (function(){
 			printedLines.push(line);
 		}
 		try {
+			//TODO: unchecked commands : db.restaurants.findAndModify, db.restaurants.ensureIndex, db.restaurants.group, db.restaurants.aggregate, db.restaurants.update writeConcern-Stuff
 			var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
 			if(ret instanceof MongoNS.DBQuery)
 				ret = ret._exec()
+
+			if(ret instanceof MongoNS.WriteResult){
+				MongoNS.__namespacedPrint(ret.toString());
+				ret.__magicNoPrint = 1;
+			}
 		}catch(e){
 			var ret = undefined;
 			MongoNS.__namespacedPrint(e.toString());
@@ -240,17 +246,7 @@ window.MongoBrowser = (function(){
 		this.uiElements.printedLines.text("");
 		this.uiElements.results.children().remove();
 
-		if(printedLines.length !== 0){
-			this.uiElements.printContainer.show();
-
-			var text = "";
-			for(var i=0; i < printedLines.length; i++){
-				text += printedLines[i] + "\n";
-			}
-			self.uiElements.printedLines.text(text);
-		}
-
-		if(typeof ret !== "undefined"){
+		if(typeof ret !== "undefined" && ret !== null && typeof ret.__magicNoPrint === "undefined"){
 			this.uiElements.resultsTable.show();
 
 			if(ret instanceof MongoNS.Cursor){
@@ -269,7 +265,18 @@ window.MongoBrowser = (function(){
 				$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
 			});
 
-			return ret;
+		}else if(printedLines.length === 0){
+			printedLines.push("Script executed successfully but there is no output to display.")
+		}
+
+		if(printedLines.length !== 0){
+			this.uiElements.printContainer.show();
+
+			var text = "";
+			for(var i=0; i < printedLines.length; i++){
+				text += printedLines[i] + "\n";
+			}
+			self.uiElements.printedLines.text(text);
 		}
 	}
 

@@ -109,7 +109,8 @@ var MongoNS = (function(){
 		execute: execute,
 		ObjectId: ObjectId,
 		NumberLong: NumberLong,
-		tojson: tojson
+		tojson: tojson,
+		WriteResult: WriteResult
 	};
 
 	return toBeAccessible;
