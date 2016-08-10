@@ -224,7 +224,6 @@ window.MongoBrowser = (function(){
 			printedLines.push(line);
 		}
 		try {
-			//TODO: unchecked commands : db.restaurants.findAndModify, db.restaurants.ensureIndex, db.restaurants.group, db.restaurants.aggregate, db.restaurants.update writeConcern-Stuff
 			var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
 			if(ret instanceof MongoNS.DBQuery)
 				ret = ret._exec()

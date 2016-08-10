@@ -66,9 +66,7 @@ var rpc = (function(){
 				throw Error("We expected a $readPreference and got none");
 			}
 
-			//TODO: is this correct? see CPP code below:
 			appendElements(metaDataBob, readPrefEl);
-		    // metadataBob->append(readPrefEl);
 		}
 
 
@@ -114,7 +112,6 @@ var rpc = (function(){
 
 		    if(wasWrapped){
 		        // Check if legacyCommand has an invalid $maxTimeMS option.
-		        // TODO: Move this check elsewhere when we handle upconverting/downconverting maxTimeMS.
 		    	if(typeof legacyCommand["$maxTimeMS"] !== "undefined"){
 		    		throw new Error("cannot use $maxTimeMS query option with " +
 		                          "commands; use maxTimeMS command option " +

@@ -155,8 +155,8 @@ DBClientCursor = function(///*DBClientBase* */ client,
     this.batch = {
         nReturned: 0,
         pos:0,
-        data: null, //TODO
-        m: null //message //TODO
+        data: null,
+        m: null //message
     };
 
     this.connection = connection;
@@ -318,7 +318,6 @@ DBClientCursor.prototype.init = function(){
     toSend.connection = this.connection;
 
     var self = this;
-    //TODO: Refactor this into port_client.js
     $.ajax("/shell/initCursor", {
                 async: false,
                 data: JSON.stringify(toSend),
@@ -372,7 +371,6 @@ DBClientCursor.prototype.next = function(){
 
     // BSONObj o(batch.data);
     // batch.data += o.objsize();
-    //  todo would be good to make data null at end of batch for safety
     // return o;
 }
 

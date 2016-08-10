@@ -205,7 +205,7 @@ class ShellController {
 			def iterable = mc.getDatabase(database).getCollection(collection)
 									.find(query)
 									.projection(BsonDocument.parse(request.fieldsToReturn))
-									.skip(request.nToSkip) //TODO: Handle other options
+									.skip(request.nToSkip)
 			def cursor = iterable.iterator()
 
 			def nToReturn = request.nToReturn;
@@ -226,7 +226,6 @@ class ShellController {
 				}
 			}
 
-			//TODO: Handle all iterated
 			def scursor = cursor.getServerCursor()
 			def cursorId = 0;
 			if(!isFindOne && scursor != null){
