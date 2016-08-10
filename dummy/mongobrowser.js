@@ -1075,6 +1075,13 @@ window.MongoBrowser = (function(){
 		var serverItem = listItem.clone().addClass("server");
 		var databaseItems = $("<ul></ul>");
 
+		var systemItem = listItem.clone().addClass("folder");
+		var systemDatabases = $("<ul></ul>");
+		systemItem.append(systemDatabases);
+		systemItem.find(".listItem").text("System");
+
+		databaseItems.append(systemItem);
+
 		serverItem.find(".listItem").text(hostname);
 		serverItem.append(databaseItems);
 
@@ -1091,7 +1098,11 @@ window.MongoBrowser = (function(){
 			collectionsFolder.append(collectionItems);
 			foldersInDB.append(collectionsFolder);
 			dbItem.append(foldersInDB);
-			databaseItems.append(dbItem);
+
+			if(databaseName === "admin" || databaseName === "local")
+				systemDatabases.append(dbItem);
+			else
+				databaseItems.append(dbItem);
 
 			var collections = mongo.getDB(databaseName).getCollectionNames();
 

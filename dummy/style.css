@@ -134,22 +134,22 @@
 		display:inline-block;
 	}
 
-	.mongoBrowser .sideBar li.server .icon {
+	.mongoBrowser .sideBar li.server > .icon {
 		background: url(images/server_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
-	.mongoBrowser .sideBar li.database .icon{
+	.mongoBrowser .sideBar li.database > .icon{
 		background: url(images/database_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
-	.mongoBrowser .sideBar li.folder .icon {
+	.mongoBrowser .sideBar li.folder > .icon {
 		background: url(images/folder_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
-	.mongoBrowser .sideBar li.collection .icon {
+	.mongoBrowser .sideBar li.collection > .icon {
 		background: url(images/collection_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
