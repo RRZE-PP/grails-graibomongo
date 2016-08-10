@@ -72,6 +72,9 @@ window.MongoBrowser = (function(){
 		ui.info.collection.text(collection);
 		ui.prompt.val(defaultPrompt);
 
+		//calling this here fixes problems with minWidth
+		ui.resultsTable.resizableColumns({minWidth: 15});
+
 		this.state.id = id;
 		this.state.db = database
 		this.state.collection = collection;
@@ -277,6 +280,12 @@ window.MongoBrowser = (function(){
 			}
 			self.uiElements.printedLines.text(text);
 		}
+
+		self.uiElements.resultsTable.find("th").css("width", "");
+		self.uiElements.resultsTable.resizableColumns("destroy");
+		self.uiElements.resultsTable.prev(".resizableColumnsFix").remove();
+		self.uiElements.resultsTable.resizableColumns({minWidth: 15});
+		self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
 	}
 
 
@@ -394,7 +403,12 @@ window.MongoBrowser = (function(){
 
 		self.rootElement.appendTo(appendTo);
 		self.rootElement.addClass("mongoBrowser");
-		self.rootElement.css("display", "block");
+		self.rootElement.css("display", "");
+
+		if(options.window === "moveable")
+			self.rootElement.dialog({minWidth:642, minHeight:550});
+		else if(options.window === "resizable")
+			self.rootElement.resizable({minWidth:642, minHeight:550});
 	}
 
 	/** The total number of MongoBrowsers created to savely create unique IDs
@@ -842,6 +856,7 @@ window.MongoBrowser = (function(){
 		}
 
 		sideBar.delegate(".foldIcon", "click", function(evt){toggleCollapsed(evt.target.parentNode)});
+		sideBar.parent().resizable({handles: "e", minWidth: 120});
 	}
 
 	/**
@@ -866,6 +881,7 @@ window.MongoBrowser = (function(){
 		//make tabs closeable
 		self.uiElements.tabs.container.delegate(".closeButton", "click", function(){
 			var panelId = $(this).closest("li").remove().attr("aria-controls");
+			self.state.tabs[panelId].uiElements.resultsTable.resizableColumns("destroy");
 			$("#" + panelId ).remove();
 			delete self.state.tabs[panelId];
 			self.uiElements.tabs.container.tabs("refresh");
@@ -1147,4 +1163,7 @@ window.MongoBrowser = (function(){
  * The options for mongobrowser
  * @typedef {Object} MongoBrowser~options
  * @property {MongoBrowser~connectionPreset[]} [connectionPresets] - a list of connection presets
+ * @property {String} [window] - controlls the main window. if it is set to "moveable" the window will behave like a regular
+ *                               dialog (mimicing a window in MS Windows). If set to "resizable" it's a static div, but you
+ *                               can change its size
  */

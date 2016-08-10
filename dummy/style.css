@@ -9,6 +9,7 @@
 		font-size: 14px;
 		border-bottom: 1px solid #aaa;
 		padding:3px;
+		flex-shrink:0;
 	}
 
 	.mongoBrowser .menuBar > span {
@@ -25,6 +26,7 @@
 		padding:5px;
 		height:34px; /*needed for chrome and divider height*/
 		border-bottom: 1px solid #aaa;
+		flex-shrink: 0;
 	}
 
 	.mongoBrowser .actionBar .dropDown {
@@ -74,16 +76,13 @@
  */
 
 	.mongoBrowser .sideBar {
-		width: 230px;
-		float: left;
 		background-color:#f8f8f8;
 		font-size:14px;
 		overflow:auto;
 		border-right:1px solid #ddd;
-		z-index: 3;
-		position:relative;
-	}
 
+		width: 240px;
+	}
 
 	.mongoBrowser .sideBar ul {
 		padding-left:30px;
@@ -127,7 +126,6 @@
 		transition:transform 0.25s;
 	}
 
-
 	.mongoBrowser .sideBar li .icon {
 		width:18px;
 		height:18px;
@@ -166,13 +164,24 @@
 
 /* Main Content
  */
+
+	.mongoBrowser {
+		display: flex;
+		flex-direction:column;
+
+	}
 	.mongoBrowser .mainBody {
 		background-color:#f0f0f0;
 		border-bottom:1px solid #aaa;
+
+		display: flex;
+		flex-direction: row;
+		flex:auto;
 	}
 
 	.mongoBrowser .mainBody .tabContainer {
-		padding-left:230px;
+		flex: auto;
+		padding: 0px;
 	}
 
 	.mongoBrowser .mainBody .tabContainer .tabList li .closeButton {
@@ -257,6 +266,13 @@
 		cursor: default;
 	}
 
+	.mongoBrowser .mainBody .tabContainer .resultsTable td {
+		max-width: 0px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
 	.mongoBrowser .mainBody .tabContainer .methods {
 		background-color: #494c4e;
 		width: 50%;
@@ -336,6 +352,16 @@
 	.mongoBrowser .window.connectionManager .connectionsTable tbody tr:not(.whitespace) {
 		cursor: pointer
 	}
+
+	.mongoBrowser .window.connectionManager .connectionsTable tbody tr td::-moz-selection{
+	    background-color: transparent;
+	    color: #000;
+    }
+
+	.mongoBrowser .window.connectionManager .connectionsTable tbody tr td::selection {
+	    background-color: transparent;
+	    color: #000;
+    }
 
 	.mongoBrowser .window.connectionManager ~ div.ui-dialog-buttonpane .connectIcon {
 		background: url('images/server_16x16.png') no-repeat;
