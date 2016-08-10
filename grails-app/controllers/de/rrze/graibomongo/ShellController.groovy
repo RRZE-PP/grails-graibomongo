@@ -119,19 +119,24 @@ class CursorInitRequest implements grails.validation.Validateable {
 class RequestMoreRequest implements grails.validation.Validateable {
 	ConnectionData connection;
 
-	String cursorId;
+	Map cursorId; //This will be converted to a Long in the getter! Ugly, but I see no other way :(
+	Long cursorId_;
 	Long nToReturn;
 
 	def getCursorId(){
-		if(this.cursorId && this.cursorId instanceof String && this.cursorId.startsWith("NumberLong(\"") && this.cursorId.endsWith("\")")){
-			this.cursorId = Long.valueOf(this.cursorId[12 .. -3]);
+		if(this.cursorId_ == null){
+			if(this.cursorId && this.cursorId instanceof String && this.cursorId.startsWith("NumberLong(\"") && this.cursorId.endsWith("\")")){
+				this.cursorId_ = Long.valueOf(this.cursorId[12 .. -3]); //keeping this here, but should never be invoced
+			}else if(this.cursorId && this.cursorId instanceof Map &&  '$numberLong' in this.cursorId){
+				this.cursorId_ = Long.valueOf(this.cursorId['$numberLong']);
+			}
 		}
 
-		return this.cursorId
+		return this.cursorId_
 	}
 
 	String toString(){
-		return "Cursor(" + cursorId + ").get(" + nToReturn + ")";
+		return "Cursor(" + getCursorId() + ").get(" + nToReturn + ")";
 	}
 }
 
