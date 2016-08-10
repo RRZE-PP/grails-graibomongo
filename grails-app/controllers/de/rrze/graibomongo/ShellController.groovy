@@ -5,15 +5,11 @@ import com.mongodb.ServerAddress
 import com.mongodb.MongoCredential
 import com.mongodb.MongoClientOptions
 import com.mongodb.MongoTimeoutException
+import com.mongodb.MongoCommandException
 import com.mongodb.client.MongoDatabase
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.bson.BsonDocument
-import org.jongo.Jongo
-import org.jongo.RawResultHandler
-import org.jongo.query.BsonQueryFactory
-import org.jongo.marshall.jackson.JacksonEngine
-import org.jongo.marshall.jackson.configuration.Mapping
 
 import grails.converters.JSON
 
@@ -167,18 +163,17 @@ class ShellController {
 			                                  conn.getAuthList(),
 			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
 
-	    	Jongo jong = new Jongo(mc.getDB(request.database))
-
-			def result = jong.runCommand(request.command).map(new RawResultHandler());
+			def result = mc.getDatabase(request.database).runCommand(BsonDocument.parse(request.command))
 
 			mc.close()
 
-			render result as JSON
+			response.setContentType("application/json")
+			render result.toJson(new JsonWriterSettings(JsonMode.STRICT))
 
-		}catch(IllegalArgumentException e){
-			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()])
+		}catch(IllegalArgumentException | MongoCommandException e){
+			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()] as JSON)
 		}catch(MongoTimeoutException e){
-			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()])
+			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()] as JSON)
 		}
 	}
 
@@ -247,9 +242,9 @@ class ShellController {
 					cursorId: "NumberLong(\"" + cursorId + "\")"]  as JSON)
 
 		}catch(IllegalArgumentException e){
-			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()])
+			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()] as JSON)
 		}catch(MongoTimeoutException e){
-			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()])
+			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()] as JSON)
 		}
 	}
 

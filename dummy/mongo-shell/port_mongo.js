@@ -64,7 +64,7 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
             contentType: "application/json; charset=utf-8"
 		})
 		.done(function(data){
-			result = data;
+			result = jsObjectToJSObjectWithBsonValues(data);
 		});
 
 	if(result === null)
