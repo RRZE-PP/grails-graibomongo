@@ -1,6 +1,6 @@
 
 var BSON = bson().BSON;
-var NumberLong = bson().Long;
+// var NumberLong = bson().Long;
 var ObjectId = bson().ObjectID;
 var BinData = bson().Binary;
 var MinKey = bson().MinKey;
@@ -12,6 +12,14 @@ var NumberInt=function(){};
 Object.bsonsize = function(){
 	BSON.calculateObjectSize.apply(this, arguments);
 }
+
+function NumberLong(){
+	if(arguments.length == 1 && typeof arguments[0] === "string")
+		return bson().Long.fromString(arguments[0]);
+	else
+		bson().Long.apply(this, arguments);
+}
+NumberLong.prototype = bson().Long.prototype;
 
 
 function jsObjectToJSObjectWithBsonValues(object){
