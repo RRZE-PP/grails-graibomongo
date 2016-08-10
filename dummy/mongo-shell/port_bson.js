@@ -15,10 +15,13 @@ Object.bsonsize = function(){
 
 
 function jsObjectToJSObjectWithBsonValues(object){
-	if(typeof object !== "object")
+	if(typeof object !== "object" || object === null)
 		return object;
 
 	function constructFromExtendedJSON(obj){
+		if(typeof obj !== "object" || obj === null)
+			return obj;
+
 		switch(Object.keys(obj)[0]){
 			case "$oid": return ObjectId(obj["$oid"]);
 			case "$numberLong": return NumberLong(obj["$numberLong"]);
@@ -32,6 +35,9 @@ function jsObjectToJSObjectWithBsonValues(object){
 	}
 
 	function isBSONObject(obj){
+		if(typeof obj !== "object" || obj === null)
+			return false;
+
 		switch(Object.keys(obj)[0]){
 			case "$oid":
 			case "$numberLong":
