@@ -331,7 +331,9 @@ DBClientCursor.prototype.init = function(){
                 }
                 self.dataReceived();
             })
-            .fail(function(){
+            .fail(function(jqXHR){
+                if(typeof jqXHR.responseJSON !== "undefined" && typeof jqXHR.responseJSON.error !== "undefined")
+                    throw Error(jqXHR.responseJSON.error);
                 throw Error("DBClientCursor::init failed");
             });
 
@@ -445,7 +447,9 @@ DBClientCursor.prototype.requestMore = function(){
                 }
                 self.dataReceived();
             })
-            .fail(function(){
+            .fail(function(jqXHR){
+                if(typeof jqXHR.responseJSON !== "undefined" && typeof jqXHR.responseJSON.error !== "undefined")
+                    throw Error(jqXHR.responseJSON.error);
                 throw Error("DBClientCursor::init failed");
             });
 }

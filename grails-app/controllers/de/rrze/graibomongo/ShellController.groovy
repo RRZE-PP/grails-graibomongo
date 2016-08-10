@@ -6,6 +6,7 @@ import com.mongodb.MongoCredential
 import com.mongodb.MongoClientOptions
 import com.mongodb.MongoTimeoutException
 import com.mongodb.MongoCommandException
+import com.mongodb.MongoQueryException
 import com.mongodb.client.MongoDatabase
 import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
@@ -176,8 +177,10 @@ class ShellController {
 			render result.toJson(new JsonWriterSettings(JsonMode.STRICT))
 
 		}catch(IllegalArgumentException | MongoCommandException e){
+			response.status = 422
 			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()] as JSON)
 		}catch(MongoTimeoutException e){
+			response.status = 422
 			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()] as JSON)
 		}
 	}
@@ -245,9 +248,11 @@ class ShellController {
 					resultFlags: 0,
 					cursorId: "NumberLong(\"" + cursorId + "\")"]  as JSON)
 
-		}catch(IllegalArgumentException e){
+		}catch(IllegalArgumentException | MongoQueryException e){
+			response.status = 422
 			render([error: 'Invalid command sent. Exception was: ' + e.getMessage()] as JSON)
 		}catch(MongoTimeoutException e){
+			response.status = 422
 			render([error: 'Connection to the database timed out. Exception was: ' + e.getMessage()] as JSON)
 		}
 	}

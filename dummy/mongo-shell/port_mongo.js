@@ -65,6 +65,11 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
 		})
 		.done(function(data){
 			result = jsObjectToJSObjectWithBsonValues(data);
+		})
+		.fail(function(jqXHR){
+            if(typeof jqXHR.responseJSON !== "undefined" && typeof jqXHR.responseJSON.error !== "undefined")
+                throw Error(jqXHR.responseJSON.error);
+            throw Error("Executing the command failed for an unknown reason.")
 		});
 
 	if(result === null)
