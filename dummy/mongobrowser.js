@@ -403,6 +403,7 @@ window.MongoBrowser = (function(){
 
 		self.rootElement.appendTo(appendTo);
 		self.rootElement.addClass("mongoBrowser");
+		self.rootElement.attr("id", "mongoBrowser-"+self.instanceNo)
 		self.rootElement.css("display", "");
 
 		if(options.window === "moveable")
