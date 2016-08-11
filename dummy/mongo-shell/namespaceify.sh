@@ -36,6 +36,7 @@ echo "// ---- MODULE: collection ---- " >> "$FILENAME";    cat collection.js >> 
 echo "// ---- MODULE: bridge ---- " >> "$FILENAME";        cat bridge.js >> "$FILENAME";        echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: bulk_api ---- " >> "$FILENAME";      cat bulk_api.js >> "$FILENAME";      echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: crud_api ---- " >> "$FILENAME";      cat crud_api.js >> "$FILENAME";      echo -e "\n\n" >> "$FILENAME"
+echo "// ---- MODULE: port_db ---- " >> "$FILENAME";       cat port_db.js >> "$FILENAME";       echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: db ---- " >> "$FILENAME";            cat db.js >> "$FILENAME";            echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: explainable ---- " >> "$FILENAME";   cat explainable.js >> "$FILENAME";   echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: explain_query ---- " >> "$FILENAME"; cat explain_query.js >> "$FILENAME"; echo -e "\n\n" >> "$FILENAME"

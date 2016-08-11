@@ -1144,9 +1144,9 @@ window.MongoBrowser = (function(){
 
 				var collItem = listItem.clone().addClass("collection");
 				collItem.find(".listItem").text(collection);
-				collItem.on("dblclick", (function(database, collection){
-					return function(){addTab(self, database, collection)};
-				})(mongo.getDB(databaseName), collection));
+				collItem.on("dblclick", (function(mongo, databaseName, collection){
+					return function(){addTab(self, mongo.getDB(database), collection)};
+				})(mongo, databaseName, collection));
 				collectionItems.append(collItem);
 			}
 		}
