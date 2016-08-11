@@ -228,8 +228,14 @@ window.MongoBrowser = (function(){
 		}
 		try {
 			var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
-			if(ret instanceof MongoNS.DBQuery)
+
+			if(ret instanceof MongoNS.DBQuery){
+				this.uiElements.info.collection.text(ret._collection._shortName);
+				this.uiElements.info.collection.parent().show();
 				ret = ret._exec()
+			}else{
+				this.uiElements.info.collection.parent().hide();
+			}
 
 			if(ret instanceof MongoNS.WriteResult){
 				MongoNS.__namespacedPrint(ret.toString());
