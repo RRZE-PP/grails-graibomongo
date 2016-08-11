@@ -66,11 +66,11 @@ window.MongoBrowser = (function(){
 									   }
 									}
 
-		ui.title.text(defaultPrompt.substr(0, 20)+"...");
 		ui.info.connection.text(connection);
 		ui.info.database.text(database.toString());
 		ui.info.collection.text(collection);
 		ui.prompt.val(defaultPrompt);
+		this.setTitle(defaultPrompt);
 
 		//calling this here fixes problems with minWidth
 		ui.resultsTable.resizableColumns({minWidth: 15});
@@ -286,6 +286,8 @@ window.MongoBrowser = (function(){
 		self.uiElements.resultsTable.prev(".resizableColumnsFix").remove();
 		self.uiElements.resultsTable.resizableColumns({minWidth: 15});
 		self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
+
+		self.setTitle(this.uiElements.prompt.val());
 	}
 
 
@@ -332,6 +334,20 @@ window.MongoBrowser = (function(){
 	 */
 	ConnectionTab.prototype.select = function(){
 		this.uiElements.link.children("a").click();
+	}
+
+	/**
+	 * Sets the title of the tab and updates the tooltip
+	 * @method
+	 * @memberof ConnectionTab
+	 */
+	ConnectionTab.prototype.setTitle = function(newTitle){
+		if(newTitle.length > 23)
+			this.uiElements.title.text(newTitle.substr(0, 20) + "...");
+		else
+			this.uiElements.title.text(newTitle);
+
+		this.uiElements.title.attr("title", newTitle);
 	}
 
 	/**
