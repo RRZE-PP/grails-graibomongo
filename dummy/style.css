@@ -386,19 +386,16 @@
 		    padding-top: 5px !important; /*overwrite a jquery setting*/
 	}
 
-	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset,
-	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset {
+	.mongoBrowser.hasSpecialButton .window ~ div.ui-dialog-buttonpane .ui-dialog-buttonset {
 		width: 100%;
 	}
 
-	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button:first-child,
-	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button:first-child {
-		float:left;
+	.mongoBrowser.hasSpecialButton .window ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button:first-child {
+		float: left;
 	}
 
-	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button,
-	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button {
-		float:right;
+	.mongoBrowser.hasSpecialButton .window ~ div.ui-dialog-buttonpane .ui-dialog-buttonset button {
+		float: right;
 	}
 
 	.mongoBrowser .window.editDocument .documentEditor,
@@ -409,11 +406,16 @@
 		overflow: scroll;
 	}
 
-	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .validateIcon {
+	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .validateIcon,
+	.mongoBrowser .window.insertDocument ~ div.ui-dialog-buttonpane .validateIcon {
 		background: url('images/webmichl-light-bulb-14x24.png') no-repeat;
 		width: 14px;
 		height: 24px;
 		top:9px;
+	}
+
+	.mongoBrowser .window.deleteDocument .docId {
+		font-weight: bold;
 	}
 
 /*

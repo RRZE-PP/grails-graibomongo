@@ -691,6 +691,56 @@ window.MongoBrowser = (function(){
 			curDialog.find(".info .collection span").text(collection);
 		}
 
+
+		/**
+		 * Initialises the delete document dialog. This function usually cannot be called directly (except within
+		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+		 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "viewDocument" as first argument
+		 * and a <tt>MongoNS.DB</tt> and document as third and fourth parameter
+		 * @param {MongoNS.DB} db - the database to display at the top border
+		 * @param {Object} doc - the document to remove
+		 * @param {String} collection - the collection from which the doc is taken
+		 * @memberof dialogInitialisators~
+		 * @inner
+		 */
+		function initDeleteDocumentDialog(db, doc, collection){
+			var curDialog = self.uiElements.dialogs.deleteDocument;
+			var connection = db.getMongo().host.substr(0, db.getMongo().host.indexOf("/"));
+			if(typeof doc._id === "undefined" || doc._id === null || typeof doc._id.tojson !== "function")
+				var id = JSON.stringify(doc._id);
+			else
+				var id = doc._id.tojson();
+
+			curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
+			curDialog.find(".info .connection span").text(connection);
+			curDialog.find(".info .database span").text(db.toString());
+			curDialog.find(".info .collection span").text(collection);
+			curDialog.find(".reallyDeleteQuestion .docId").text(id);
+
+		}
+
+
+		/**
+		 * Initialises the insert new document dialog. This function usually cannot be called directly (except within
+		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+		 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "viewDocument" as first argument
+		 * and a <tt>MongoNS.DB</tt> and document as third and fourth parameter
+		 * @param {MongoNS.DB} db - the database to display at the top border
+		 * @param {String} collection - the collection into which the doc is to be inserted
+		 * @memberof dialogInitialisators~
+		 * @inner
+		 */
+		function initInsertDocumentDialog(db, collection){
+			var curDialog = self.uiElements.dialogs.insertDocument;
+			var connection = db.getMongo().host.substr(0, db.getMongo().host.indexOf("/"));
+
+			curDialog.find(".documentEditor").val("{\n\n}");
+			curDialog.find(".info .connection span").text(connection);
+			curDialog.find(".info .database span").text(db.toString());
+			curDialog.find(".info .collection span").text(collection);
+
+		}
+
 		/**
 		 * Initialises the view document dialog. This function usually cannot be called directly (except within
 		 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
@@ -717,6 +767,7 @@ window.MongoBrowser = (function(){
 		var curDialog = self.uiElements.dialogs.connectionManager =
 			self.rootElement.find(".connectionManager").dialog({
 				autoOpen: false,
+				dialogClass: "mongoBrowser",
 				buttons: [
 					{text: "Cancel",
 					click: function() {
@@ -727,7 +778,6 @@ window.MongoBrowser = (function(){
 					icons: {primary: "connectIcon"},
 					click: function(){connectCurrentConnectionPreset(); $(this).dialog("close");}}
 				],
-				dialogClass: "mongoBrowser",
 				modal: true,
 				width: 'auto'
 			});
@@ -744,6 +794,7 @@ window.MongoBrowser = (function(){
 		var curDialog = self.uiElements.dialogs.connectionSettings =
 			self.rootElement.find(".connectionSettings").dialog({
 				autoOpen: false,
+				dialogClass: "mongoBrowser hasSpecialButton",
 				buttons: [
 					{text: "Test",
 					icons: {primary: "testIcon"},
@@ -756,7 +807,6 @@ window.MongoBrowser = (function(){
 						}
 					}
 				],
-				dialogClass: "mongoBrowser",
 				modal: true,
 				width: 380
 			});
@@ -808,7 +858,7 @@ window.MongoBrowser = (function(){
 		//begin document editor
 		curDialog = self.uiElements.dialogs.editDocument = self.rootElement.find(".editDocument").dialog({
 			autoOpen: false,
-			dialogClass: "mongoBrowser",
+			dialogClass: "mongoBrowser hasSpecialButton",
 			buttons:[
 					{text: "Validate",
 					icons: {primary: "validateIcon"},
@@ -843,6 +893,47 @@ window.MongoBrowser = (function(){
 			height: "auto",
 		});
 		curDialog.initialise = initViewDocumentDialog;
+
+		//begin document creator/insertor
+		curDialog = self.uiElements.dialogs.insertDocument = self.rootElement.find(".insertDocument").dialog({
+			autoOpen: false,
+			dialogClass: "mongoBrowser hasSpecialButton",
+			buttons:[
+					{text: "Validate",
+					icons: {primary: "validateIcon"},
+					click: TODO},
+					{text: "Save",
+					click: TODO},
+					{text: "Cancel",
+					click: function() {
+						$( this ).dialog( "close" );
+						}
+					}
+				],
+			modal: true,
+			width: "auto",
+			height: "auto",
+		});
+		curDialog.initialise = initInsertDocumentDialog;
+
+		//begin document delete
+		curDialog = self.uiElements.dialogs.deleteDocument = self.rootElement.find(".deleteDocument").dialog({
+			autoOpen: false,
+			dialogClass: "mongoBrowser",
+			buttons:[
+					{text: "Yes",
+					click: TODO},
+					{text: "No",
+					click: function() {
+						$( this ).dialog( "close" );
+						}
+					}
+				],
+			modal: true,
+			width: "auto",
+			height: "auto",
+		});
+		curDialog.initialise = initDeleteDocumentDialog;
 
 	}
 
@@ -1070,7 +1161,7 @@ window.MongoBrowser = (function(){
 
 	/**
 	 * Opens one of the dialogs from self.uiElements.dialogs. Currently there are:
-	 * connectionManager, connectionSettings
+	 * connectionManager, connectionSettings, editDocument, viewDocument, insertDocument, deleteDocument
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
 	 * @param {string} dialogName - the name of the dialog to open
 	 * @param {object...} [initArgs] -
