@@ -114,108 +114,112 @@ window.MongoBrowser = (function(){
 	ConnectionTab.prototype.execute = function(){
 		var self = this;
 
-		function base_print(indent, image, alt, col1, col2, col3, hasChildren) {
-			return $("<tr data-indent='" + indent + "'  class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
+		function base_print(indent, image, alt, col1, col2, col3, hasChildren, key) {
+			var newLine = $("<tr data-indent='" + indent + "' data-key='" + key + "' class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
 				style='"+ (indent > 0 ? "display:none" : "") + "'> \
 				<td><span class='foldIcon'>&nbsp;</span> <img src='images/" + image + "' class='typeIcon' alt='" + alt + "' /> " + col1 + "</td> \
 				<td>" + col2 + "</td> \
-				<td>" + col3 + "</td></tr>").appendTo(self.uiElements.results);
+				<td>" + col3 + "</td></tr>");
+			newLine.appendTo(self.uiElements.results);
+			return newLine;
 		}
 
-		function printObject(key, val, indent) {
+		function printObject(key, displayedKey, val, indent) {
 			var keys = Object.keys(val);
 
-			var ret = base_print(indent, "bson_object_16x16.png", "object", key, "{ " + keys.length + " fields }", "Object", keys.length !== 0);
+			var ret = base_print(indent, "bson_object_16x16.png", "object", displayedKey, "{ " + keys.length + " fields }", "Object", keys.length !== 0, key);
 
 			for(var i=0; i<keys.length; i++){
-				printLine(keys[i], val[keys[i]], indent + 1);
+				var newLine = printLine(keys[i], keys[i], val[keys[i]], indent + 1);
+				ret = ret.add(newLine);
 			}
 			return ret;
 		}
 
-		function printArray(key, val, indent) {
+		function printArray(key, displayedKey, val, indent) {
 			var keys = Object.keys(val);
 
-			var ret = base_print(indent, "bson_array_16x16.png", "array", key, "[ " + val.length + " Elements ]", "Array", keys.length !== 0);
+			var ret = base_print(indent, "bson_array_16x16.png", "array", displayedKey, "[ " + val.length + " Elements ]", "Array", keys.length !== 0, key);
 
 			for(var i=0; i<keys.length; i++){
-				printLine("[" + keys[i] + "]", val[keys[i]], indent + 1);
+				var newLine = printLine(keys[i], "[" + keys[i] + "]", val[keys[i]], indent + 1);
+				ret = ret.add(newLine);
 			}
 
 			return ret;
 		}
 
-		function printObjectId(key, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "oid", key, val.toString(), "ObjectId");
+		function printObjectId(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_unsupported_16x16.png", "oid", displayedKey, val.toString(), "ObjectId", false, key);
 		}
 
-		function printRegExp(key, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "regex", key, val.toString(), "Regular Expression");
+		function printRegExp(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_unsupported_16x16.png", "regex", displayedKey, val.toString(), "Regular Expression", false, key);
 		}
 
-		function printDate(key, val, indent) {
-			return base_print(indent, "bson_datetime_16x16.png", "date", key, val.toString(), "Date");
+		function printDate(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_datetime_16x16.png", "date", displayedKey, val.toString(), "Date", false, key);
 		}
 
-		function printString(key, val, indent) {
-			return base_print(indent, "bson_string_16x16.png", "string", key, val, "String");
+		function printString(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_string_16x16.png", "string", displayedKey, val, "String", false, key);
 		}
 
-		function printDouble(key, val, indent) {
-			return base_print(indent, "bson_double_16x16.png", "double", key, val, "Double");
+		function printDouble(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_double_16x16.png", "double", displayedKey, val, "Double", false, key);
 		}
 
-		function printInt(key, val, indent) {
-			return base_print(indent, "bson_integer_16x16.png", "int", key, val, "Int32");
+		function printInt(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_integer_16x16.png", "int", displayedKey, val, "Int32", false, key);
 		}
 
-		function printLong(key, val, indent) {
-			return base_print(indent, "bson_integer_16x16.png", "long", key, val.toString(), "Int64");
+		function printLong(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_integer_16x16.png", "long", displayedKey, val.toString(), "Int64", false, key);
 		}
 
-		function printBoolean(key, val, indent) {
-			return base_print(indent, "bson_bool_16x16.png", "boolean", key, val, "Boolean");
+		function printBoolean(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_bool_16x16.png", "boolean", displayedKey, val, "Boolean", false, key);
 		}
 
-		function printNull(key, val, indent) {
-			return base_print(indent, "bson_null_16x16.png", "null", key, "null", "Null");
+		function printNull(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_null_16x16.png", "null", displayedKey, "null", "Null", false, key);
 		}
 
-		function printUndefined(key, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "undefined", key, "undefined", "Undefined");
+		function printUndefined(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_unsupported_16x16.png", "undefined", displayedKey, "undefined", "Undefined", false, key);
 		}
 
-		function printUnsupported(key, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "unsupported", key, "", "unsupported");
+		function printUnsupported(key, displayedKey, val, indent) {
+			return base_print(indent, "bson_unsupported_16x16.png", "unsupported", displayedKey, "", "unsupported", false, key);
 		}
 
-		function printLine(key, val, indent) {
+		function printLine(key, displayedKey, val, indent) {
 			if(val instanceof Array)
-				return printArray(key, val, indent);
+				return printArray(key, displayedKey, val, indent);
 			else if(val instanceof MongoNS.ObjectId)
-				return printObjectId(key, val, indent);
+				return printObjectId(key, displayedKey, val, indent);
 			else if(val instanceof MongoNS.NumberLong)
-				return printLong(key, val, indent);
+				return printLong(key, displayedKey, val, indent);
 			else if(val instanceof RegExp)
-				return printRegExp(key, val, indent);
+				return printRegExp(key, displayedKey, val, indent);
 			else if(val instanceof Date)
-				return printDate(key, val, indent);
+				return printDate(key, displayedKey, val, indent);
 			else if(typeof val === "string" || val instanceof String)
-				return printString(key, val, indent);
+				return printString(key, displayedKey, val, indent);
 			else if((typeof val === "number" || val instanceof Number) && parseInt(val) === val)
-				return printInt(key, val, indent);
+				return printInt(key, displayedKey, val, indent);
 			else if(typeof val === "number" || val instanceof Number)
-				return printDouble(key, val, indent);
+				return printDouble(key, displayedKey, val, indent);
 			else if(typeof val === "boolean")
-				return printBoolean(key, val, indent);
+				return printBoolean(key, displayedKey, val, indent);
 			else if(val === null) //TODO: Int vs Double!
-				return printNull(key, val, indent);
+				return printNull(key, displayedKey, val, indent);
 			else if(typeof val === "undefined")
-				return printUndefined(key, val, indent);
+				return printUndefined(key, displayedKey, val, indent);
 			else if(typeof val === "object") //this comes last after all others have been ruled out
-				return printObject(key, val, indent);
+				return printObject(key, displayedKey, val, indent);
 			else
-				return printUnsupported(key, val, indent); //should not happen
+				return printUnsupported(key, displayedKey, val, indent); //should not happen
 		}
 
 		var startTime = $.now();
@@ -262,11 +266,12 @@ window.MongoBrowser = (function(){
 				for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
 					var val = ret.next();
 					this.state.displayedResult.push(val);
-					printLine("(" + (i + 1) + ")", val, 0).attr("data-index", i);
+					var lines = printLine("", "(" + (i + 1) + ")", val, 0);
+					lines.attr("data-index", i);
 				}
 			}else{
 				this.state.displayedResult = [ret];
-				printLine("(" + 1 + ")", ret, 0).attr("data-index", 0);
+				printLine("", "(" + 1 + ")", ret, 0).attr("data-index", 0);
 			}
 			this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
 			this.uiElements.results.children("[data-indent]").each(function(index, elem){
@@ -960,31 +965,78 @@ window.MongoBrowser = (function(){
 			className: "mongoBrowser",
 			selector: ".resultsTable tbody tr",
 			items: {
-				expand: {name: "Expand recursively",
+				expand:    {name: "Expand recursively",
 				            callback: function(){collapseOrExpandResult($(this), false, true);},
-				            disabled: function(){$(this).hasClass("hasChildren")}},
-				collapse: {name: "Collapse recursively", callback: function(){collapseOrExpandResult($(this), true, true);},
-				            disabled: function(){$(this).hasClass("hasChildren")}},
+				            disabled: function(){return !$(this).hasClass("hasChildren")}},
+				collapse:  {name: "Collapse recursively",
+				            callback: function(){collapseOrExpandResult($(this), true, true);},
+				            disabled: function(){return !$(this).hasClass("hasChildren")}},
 				"sep1": "---------",
-				edit: {name: "Edit Document...", callback: function(){
-						var idx = parseInt($(this).attr("data-index"));
-						var curTab = getCurrentTab(self);
-						openDialog(self, "editDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection)}},
-				view: {name: "View Document...", callback: function(){
-						var idx = parseInt($(this).attr("data-index"));
-						var curTab = getCurrentTab(self);
-						openDialog(self, "viewDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection)}},
-				insert: {name: "Insert Document..."},
+				edit:      {name: "Edit Document...",
+				            callback: function(){
+				            	var idx = parseInt($(this).attr("data-index"));
+				            	var curTab = getCurrentTab(self);
+				            	openDialog(self, "editDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
+				            }},
+				view:      {name: "View Document...",
+				            callback: function(){
+				            	var idx = parseInt($(this).attr("data-index"));
+				            	var curTab = getCurrentTab(self);
+				            	openDialog(self, "viewDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
+				            }},
+				insert:    {name: "Insert Document...",
+				            callback: function(){
+				            	var curTab = getCurrentTab(self);
+				            	openDialog(self, "insertDocument", curTab.getInfo().database, curTab.getInfo().collection);
+				            }},
 				"sep2": "---------",
-				copy: {name: "Copy JSON", callback: function(){
-						var idx = parseInt($(this).attr("data-index"));
-						var elem = $("<p>").attr("data-clipboard-text", JSON.stringify(getCurrentTab(self).getDataRow(idx)));
-						var c = new Clipboard(elem[0]);
-						elem.click(); c.destroy(); elem.remove(); //well that was quick :/
-						}},
-				delete: {name: "Delete Document..."}
+				copyJSON:  {name: "Copy JSON",
+				            callback: copyJSONAndValue,
+				            disabled: function(){return !$(this).hasClass("hasChildren")},
+				            },
+				copyValue: {name: "Copy Value",
+				            callback: copyJSONAndValue,
+				            disabled: function(){return $(this).hasClass("hasChildren")},
+				           },
+				delete:    {name: "Delete Document...",
+				            callback: function(){
+				            	var idx = parseInt($(this).attr("data-index"));
+				            	var curTab = getCurrentTab(self);
+				            	openDialog(self, "deleteDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
+				           }}
 			}
 		});
+
+		function copyJSONAndValue(){
+			var idx = parseInt($(this).attr("data-index"));
+			var keyList = getKeyList($(this));
+
+			var obj = getCurrentTab(self).getDataRow(idx);
+			for(var i=0; i < keyList.length; i++){
+				obj = obj[keyList[i]];
+			}
+
+			var elem = $("<p>").attr("data-clipboard-text", JSON.stringify(obj));
+
+			var c = new Clipboard(elem[0]);
+			elem.click(); c.destroy(); elem.remove(); //well that was quick :/
+		}
+
+		/** Helper function traversing the items in the results table and returning a
+		 * list of keys to reach the property representd by the line `elem`
+		 *
+		 * @param {jQuery} elem - the element representing the property to get the key list to
+		 */
+		function getKeyList(elem){
+			var depth = parseInt(elem.attr("data-indent"));
+			if(depth === 0)
+				return [];
+
+			var prevList = getKeyList(elem.prevUntil("[data-indent='" + (depth - 1) + "']").addBack().first().prev());
+			prevList.push(elem.attr("data-key"));
+
+			return prevList;
+		}
 	}
 
 	/**

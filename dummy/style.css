@@ -416,6 +416,27 @@
 		top:9px;
 	}
 
+/*
+ * Context menu
+ */
+	.mongoBrowser.context-menu-list .context-menu-disabled {
+		display:none;
+		/*hide, even when display: block; is set in the style-attribute*/
+		visibility: hidden;
+		height:0px;
+	    margin: 0px;
+	    padding: 0px;
+	}
+
+	/*specifically hide the third element (first seperator), if it's preceded by a hidden element*/
+	.mongoBrowser.context-menu-list .context-menu-disabled ~ .context-menu-separator:nth-child(3) {
+		display:none;
+		/*hide, even when display: block; is set in the style-attribute*/
+		visibility: hidden;
+		height:0px;
+	    margin: 0px;
+	    padding: 0px;
+	}
 
 /* Global stuff
  */
