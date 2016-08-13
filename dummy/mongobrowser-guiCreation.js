@@ -499,14 +499,21 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		 * @todo create element from scratch
 		 */
 		function createRootElement(self) {
-			var dummy = $("#MongoBrowserDummy");
+			var fragment = $("#MongoBrowserDummy");
 
-			if(dummy.size() == 0){
+			if(fragment.size() === 0){
 				// TODO
 				throw new Error("Creating UI from scratch is not yet implemented");
 			}
 
-			self.rootElement = self.uiElements.root = dummy.clone();
+			if(typeof fragment[0].content === "undefined"){
+				//template tag is not yet supported
+				var dummy = $("#MongoBrowserDummy").children().clone();
+			}else{
+				var dummy = $(document.importNode(fragment[0].content, true)).children();
+			}
+
+			self.rootElement = self.uiElements.root = dummy;
 		}
 
 		/**
@@ -609,50 +616,50 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 			//register a context menu on result items
 			self.uiElements.tabs.container.contextMenu({
-				className: "mongoBrowser",
-				selector: ".resultsTable tbody tr",
-				items: {
-					expand:    {name: "Expand recursively",
-					            callback: function(){collapseOrExpandResult($(this), false, true);},
-					            disabled: function(){return !$(this).hasClass("hasChildren")}},
-					collapse:  {name: "Collapse recursively",
-					            callback: function(){collapseOrExpandResult($(this), true, true);},
-					            disabled: function(){return !$(this).hasClass("hasChildren")}},
-					"sep1": "---------",
-					edit:      {name: "Edit Document...",
-					            callback: function(){
-					            	var idx = parseInt($(this).attr("data-index"));
-					            	var curTab = getCurrentTab(self);
-					            	openDialog(self, "editDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
-					            }},
-					view:      {name: "View Document...",
-					            callback: function(){
-					            	var idx = parseInt($(this).attr("data-index"));
-					            	var curTab = getCurrentTab(self);
-					            	openDialog(self, "viewDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
-					            }},
-					insert:    {name: "Insert Document...",
-					            callback: function(){
-					            	var curTab = getCurrentTab(self);
-					            	openDialog(self, "insertDocument", curTab.getInfo().database, curTab.getInfo().collection);
-					            }},
-					"sep2": "---------",
-					copyJSON:  {name: "Copy JSON",
-					            callback: copyJSONAndValue,
-					            disabled: function(){return !$(this).hasClass("hasChildren")},
-					            },
-					copyValue: {name: "Copy Value",
-					            callback: copyJSONAndValue,
-					            disabled: function(){return $(this).hasClass("hasChildren")},
-					           },
-					delete:    {name: "Delete Document...",
-					            callback: function(){
-					            	var idx = parseInt($(this).attr("data-index"));
-					            	var curTab = getCurrentTab(self);
-					            	openDialog(self, "deleteDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
-					           }}
-				}
-			});
+					className: "mongoBrowser",
+					selector: ".resultsTable tbody tr",
+					items: {
+						expand:    {name: "Expand recursively",
+						            callback: function(){collapseOrExpandResult($(this), false, true);},
+						            disabled: function(){return !$(this).hasClass("hasChildren")}},
+						collapse:  {name: "Collapse recursively",
+						            callback: function(){collapseOrExpandResult($(this), true, true);},
+						            disabled: function(){return !$(this).hasClass("hasChildren")}},
+						"sep1": "---------",
+						edit:      {name: "Edit Document...",
+						            callback: function(){
+						            	var idx = parseInt($(this).attr("data-index"));
+						            	var curTab = getCurrentTab(self);
+						            	openDialog(self, "editDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
+						            }},
+						view:      {name: "View Document...",
+						            callback: function(){
+						            	var idx = parseInt($(this).attr("data-index"));
+						            	var curTab = getCurrentTab(self);
+						            	openDialog(self, "viewDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
+						            }},
+						insert:    {name: "Insert Document...",
+						            callback: function(){
+						            	var curTab = getCurrentTab(self);
+						            	openDialog(self, "insertDocument", curTab.getInfo().database, curTab.getInfo().collection);
+						            }},
+						"sep2": "---------",
+						copyJSON:  {name: "Copy JSON",
+						            //callback: copyJSONAndValue,
+						            disabled: function(){return !$(this).hasClass("hasChildren")},
+						            },
+						copyValue: {name: "Copy Value",
+						            //callback: copyJSONAndValue,
+						            disabled: function(){return $(this).hasClass("hasChildren")},
+						           },
+						delete:    {name: "Delete Document...",
+						            callback: function(){
+						            	var idx = parseInt($(this).attr("data-index"));
+						            	var curTab = getCurrentTab(self);
+						            	openDialog(self, "deleteDocument", curTab.getInfo().database, curTab.getDataRow(idx), curTab.getInfo().collection);
+						           }}
+					}
+				});
 
 			function copyJSONAndValue(){
 				var idx = parseInt($(this).attr("data-index"));
