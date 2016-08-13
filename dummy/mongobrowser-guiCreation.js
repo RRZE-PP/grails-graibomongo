@@ -528,6 +528,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			}
 
 			sideBar.delegate(".foldIcon", "click", function(evt){toggleCollapsed(evt.target.parentNode)});
+			sideBar.delegate("li", "click", function(evt){
+				sideBar.find(".current").removeClass("current");
+				$(evt.target).closest("li").addClass("current");})
 			sideBar.parent().resizable({handles: "e", minWidth: 120});
 		}
 

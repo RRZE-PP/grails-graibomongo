@@ -65,6 +65,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		this.state.db = database
 		this.state.collection = collection;
 		this.state.displayedResult = [];
+
 	}
 
 	/** The total number of Connection Tabs created to savely create unique IDs

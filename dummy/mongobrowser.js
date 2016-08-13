@@ -2,6 +2,7 @@ function TODO(){
 	throw new Error("Not yet implemented. Sorry");
 }
 
+
 /**
  * @namespace MongoBrowser(NS)
  * @description Please note, that all methods of the {@link MongoBrowser } class can be called within this
@@ -46,10 +47,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		self.state = {
 			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
 			connections: [],
-			tabs: {}
+			tabs: {},
+			currentFocus: null //saves which element currently has focus *within this instance*
 		}
 
-		self.instanceNo = MongoBrowser.instances++;
+		self.instanceNo = MongoBrowser.instanceCount++;
 
 		initUIElements(self);
 
@@ -62,6 +64,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			self.rootElement.dialog({minWidth:642, minHeight:550});
 		else if(options.window === "resizable")
 			self.rootElement.resizable({minWidth:642, minHeight:550});
+
+		MongoBrowser.instances["mongoBrowser-"+self.instanceNo] = self;
 	}
 
 	/** The total number of MongoBrowsers created to savely create unique IDs
@@ -69,7 +73,52 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @memberof MongoBrowser
 	 * @type {number}
 	 */
-	MongoBrowser.instances = 0;
+	MongoBrowser.instanceCount = 0;
+
+	/** All MongoBrowserInstances by id where the key is the id and the value is the instance
+	 * @static
+	 * @memberof MongoBrowser
+	 * @type {Object}
+	 */
+	MongoBrowser.instances = {};
+
+	/** 1) Sets up a global onclick handler which determines which mongobrowser instance has "focus".
+	 *     This is necesarry to send keyboard shortcuts to the right instance (or none if none has focus).
+	 *  2) Sets up a global onkeypress handler which forwards the events to the focused instance.
+	 *  Executed only once upon startup.
+	 *
+	 * @static
+	 * @private
+	 * @memberof MongoBrowser
+	 */
+	function sendEventsToCorrectInstance(){
+		var focusedMongoBrowser = null;
+		$(document).click(function(event){
+			var target = $(event.target);
+
+			var id = target.closest(".mongoBrowser").attr("id");
+			if(typeof id === "undefined"){
+				focusedMongoBrowser = null;
+			}else{
+				focusedMongoBrowser = MongoBrowser.instances[id];
+			}
+		});
+
+		$(document).keyup(function(event){
+			if(focusedMongoBrowser !== null)
+				return handleKeypress(focusedMongoBrowser, event);
+		});
+
+		//keydown events should not scroll
+		$(document).keydown(function(event){
+			if(focusedMongoBrowser !== null && focusedMongoBrowser.state.currentFocus !== null
+				&& focusedMongoBrowser.state.currentFocus.is(".sideBar, .resultsTable")
+				&& (event.key === "ArrowUp" || event.key === "ArrowDown") ){
+				event.preventDefault();
+			}
+		});
+	}
+	sendEventsToCorrectInstance();
 
 	/**
 	 * Adds a new tab to the MongoBrowser's gui.
@@ -101,6 +150,77 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		return self.state.tabs[visibleTab.attr("id")];
 	}
 
+	function handleKeypress(self, event){
+		console.log(event);
+		if(self.state.currentFocus === null)
+			return;
+
+		if(event.ctrlKey && event.key === "Enter"){
+			//if anything inside the tab-environment has focus, execute
+			if(self.uiElements.tabs.container.find(self.state.currentFocus).size() > 0){
+				getCurrentTab(self).execute();
+
+				event.preventDefault();
+				return false;
+			}
+		}
+
+		if(event.key === "Enter"){
+			if(self.state.currentFocus === self.uiElements.sideBar){
+				self.uiElements.sideBar.find(".current").dblclick();
+
+				event.preventDefault();
+				return false;
+			}
+		}
+
+		if(event.key === "ArrowUp" || event.key === "ArrowDown"){
+			var current = self.state.currentFocus.find(".current");
+
+			if(self.state.currentFocus === self.uiElements.sideBar)
+				var pool = m.uiElements.sideBar.find(".server, li:not('.collapsed') > ul > li");
+			else if(self.state.currentFocus.hasClass("resultsTable"))
+				var pool = self.state.currentFocus.find("tbody tr:visible");
+			else
+				return false;
+
+			if(event.key === "ArrowUp")
+				var nextCurrent = pool.eq(pool.index(current) === 0 ? 0 : pool.index(current) - 1);
+			else
+				var nextCurrent = pool.eq(pool.index(current) + 1);
+
+			if(nextCurrent.size() == 0) return false;
+
+			current.removeClass("current");
+			nextCurrent.addClass("current");
+
+			event.preventDefault();
+			return false;
+		}
+
+		if(event.key === "ArrowRight"){
+			var current = self.state.currentFocus.find(".current");
+			if(current.hasClass("collapsed")){
+				current.find(".foldIcon").first().click();
+
+				event.preventDefault();
+				return false;
+			}
+		}
+
+		if(event.key === "ArrowLeft"){
+			var current = self.state.currentFocus.find(".current");
+			if(current.hasClass("opened")){
+				current.find(".foldIcon").first().click();
+
+				event.preventDefault();
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	/**
 	 * Creates and initiates all UI Elements
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
@@ -114,6 +234,41 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		createTabEnvironment(self);
 		createActionBarButtons(self);
 		createSidebarEnvironment(self);
+
+		setUpFocusHandlers(self);
+	}
+
+	function setUpFocusHandlers(self){
+
+		function grantFocusTo(element, event){
+			if(self.state.currentFocus !== null)
+				self.state.currentFocus.removeClass("focused");
+			self.state.currentFocus = element;
+			self.state.currentFocus.addClass("focused");
+
+			//we will stop propagating the event, but we have a onclick handler on document
+			//so re-raise the event there
+			$(document).trigger(event);
+			event.stopPropagation();
+			return false;
+		}
+
+		self.uiElements.sideBar.delegate("li", "click", function(event){
+			return grantFocusTo(self.uiElements.sideBar, event);
+		});
+
+		self.uiElements.tabs.container.delegate(".promptContainer .prompt .userInput", "click", function(event){
+			return grantFocusTo($(event.currentTarget), event);
+		});
+
+		self.uiElements.tabs.container.delegate(".resultsTable", "click focus", function(event){
+			return grantFocusTo($(event.currentTarget), event);
+		});
+
+		self.rootElement.click(function(){
+			self.rootElement.find(".focused").removeClass("focused");
+			self.state.currentFocus = null;
+		});
 	}
 
 	/**
@@ -209,7 +364,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		var mongo = db.getMongo();
 		var databases = mongo.getDBNames();
-		var listItem = $('<li class="collapsed"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem"></span></li>');
+		var listItem = $('<li class="collapsed"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem"></span><div class="selectionIndicator"></div></li>');
 
 		var serverItem = listItem.clone().addClass("server");
 		var databaseItems = $("<ul></ul>");
