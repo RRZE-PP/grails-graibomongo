@@ -253,7 +253,10 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
 					var val = ret.next();
 					this.state.displayedResult.push(val);
-					var lines = printLine("", "(" + (i + 1) + ")", val, 0);
+					var displayedKey = "(" + (i + 1) + ")";
+					if(val._id instanceof MongoNS.ObjectId)
+						displayedKey += " " + val._id.toString();
+					var lines = printLine("", displayedKey, val, 0);
 					lines.attr("data-index", i);
 				}
 			}else{
