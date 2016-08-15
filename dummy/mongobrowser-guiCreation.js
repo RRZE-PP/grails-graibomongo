@@ -108,7 +108,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						return;
 					var idx = parseInt(curLine.attr("data-connectionIndex"));
 					var preset= self.state.connectionPresets[idx];
-					connect(self, preset.host, preset.port, "test", //todo put correct database here
+					self.connect(preset.host, preset.port, "test", //todo put correct database here
 						preset.performAuth, preset.auth.adminDatabase, preset.auth.username, preset.auth.password, preset.auth.method);
 			}
 

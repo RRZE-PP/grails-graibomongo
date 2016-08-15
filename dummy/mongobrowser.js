@@ -390,70 +390,74 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @memberof MongoBrowser#
 	 */
 	function connect(self, hostname, port, database, performAuth, adminDatabase, username, password, method){
-		if(typeof performAuth === "undefined"){ performAuth = false; }
-		if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
-		if(typeof username === "undefined"){ username = ""; }
-		if(typeof password === "undefined"){ password = ""; }
-		if(typeof method === "undefined"){ method = "scram-sha-1"; }
+		try {
+			if(typeof performAuth === "undefined"){ performAuth = false; }
+			if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
+			if(typeof username === "undefined"){ username = ""; }
+			if(typeof password === "undefined"){ password = ""; }
+			if(typeof method === "undefined"){ method = "scram-sha-1"; }
 
-		if(performAuth){
-			var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
-		}else{
-			var db = MongoNS.simple_connect(hostname, port, database);
-		}
-		self.state.connections.push(db.getMongo());
-
-		var mongo = db.getMongo();
-		var databases = mongo.getDBNames();
-		var listItem = $('<li class="collapsed"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem"></span><div class="selectionIndicator"></div></li>');
-
-		var serverItem = listItem.clone().addClass("server");
-		var databaseItems = $("<ul></ul>");
-
-		var systemItem = listItem.clone().addClass("folder");
-		var systemDatabases = $("<ul></ul>");
-		systemItem.append(systemDatabases);
-		systemItem.find(".listItem").text("System");
-
-		databaseItems.append(systemItem);
-
-		serverItem.find(".listItem").text(hostname);
-		serverItem.append(databaseItems);
-
-		for(var i=0; i<databases.length; i++){
-			var databaseName = databases[i];
-			var dbItem = listItem.clone().addClass("database");
-			var collectionsFolder = listItem.clone().addClass("folder");
-			var foldersInDB = $("<ul></ul>");
-			var collectionItems = $("<ul></ul>");
-
-			dbItem.find(".listItem").text(databaseName);
-			collectionsFolder.find(".listItem").text("Collections");
-
-			collectionsFolder.append(collectionItems);
-			foldersInDB.append(collectionsFolder);
-			dbItem.append(foldersInDB);
-
-			if(databaseName === "admin" || databaseName === "local")
-				systemDatabases.append(dbItem);
-			else
-				databaseItems.append(dbItem);
-
-			var collections = mongo.getDB(databaseName).getCollectionNames();
-
-			for(var j=0; j<collections.length; j++){
-				var collection = collections[j];
-
-				var collItem = listItem.clone().addClass("collection");
-				collItem.find(".listItem").text(collection);
-				collItem.on("dblclick", (function(mongo, databaseName, collection){
-					return function(){addTab(self, mongo.getDB(database), collection)};
-				})(mongo, databaseName, collection));
-				collectionItems.append(collItem);
+			if(performAuth){
+				var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+			}else{
+				var db = MongoNS.simple_connect(hostname, port, database);
 			}
-		}
+			self.state.connections.push(db.getMongo());
 
-		self.uiElements.sideBar.append(serverItem);
+			var mongo = db.getMongo();
+			var databases = mongo.getDBNames();
+			var listItem = $('<li class="collapsed"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem"></span><div class="selectionIndicator"></div></li>');
+
+			var serverItem = listItem.clone().addClass("server");
+			var databaseItems = $("<ul></ul>");
+
+			var systemItem = listItem.clone().addClass("folder");
+			var systemDatabases = $("<ul></ul>");
+			systemItem.append(systemDatabases);
+			systemItem.find(".listItem").text("System");
+
+			databaseItems.append(systemItem);
+
+			serverItem.find(".listItem").text(hostname);
+			serverItem.append(databaseItems);
+
+			for(var i=0; i<databases.length; i++){
+				var databaseName = databases[i];
+				var dbItem = listItem.clone().addClass("database");
+				var collectionsFolder = listItem.clone().addClass("folder");
+				var foldersInDB = $("<ul></ul>");
+				var collectionItems = $("<ul></ul>");
+
+				dbItem.find(".listItem").text(databaseName);
+				collectionsFolder.find(".listItem").text("Collections");
+
+				collectionsFolder.append(collectionItems);
+				foldersInDB.append(collectionsFolder);
+				dbItem.append(foldersInDB);
+
+				if(databaseName === "admin" || databaseName === "local")
+					systemDatabases.append(dbItem);
+				else
+					databaseItems.append(dbItem);
+
+				var collections = mongo.getDB(databaseName).getCollectionNames();
+
+				for(var j=0; j<collections.length; j++){
+					var collection = collections[j];
+
+					var collItem = listItem.clone().addClass("collection");
+					collItem.find(".listItem").text(collection);
+					collItem.on("dblclick", (function(mongo, databaseName, collection){
+						return function(){addTab(self, mongo.getDB(database), collection)};
+					})(mongo, databaseName, collection));
+					collectionItems.append(collItem);
+				}
+			}
+
+			self.uiElements.sideBar.append(serverItem);
+		}catch(e){
+			openDialog(self, "showMessage", "Could not connect", e.toString(), "error");
+		}
 
 	}
 
