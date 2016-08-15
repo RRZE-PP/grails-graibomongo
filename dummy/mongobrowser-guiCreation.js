@@ -13,7 +13,7 @@
 window.MongoBrowserNS = (function(MongoBrowserNS){
 
 	//fetch private members of mongobrowser
-	function getGuiCommands(openDialog, getCurrentTab){
+	function getGuiCommands(openDialog, getCurrentTab, testConnection){
 
 		/**
 		 * Sets callbacks on the buttons in the actionBar and saves them
@@ -205,6 +205,28 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				}
 			}
 
+			function triggerConnectionTest(){
+				var curDialog = self.uiElements.dialogs.connectionSettings
+
+				var name = curDialog.find(".connectionName").val();
+				var host = curDialog.find(".connectionHost").val();
+				var port = parseInt(curDialog.find(".connectionPort").val());
+
+				var adminDatabase = curDialog.find("[name=adminDatabase]").val();
+				var username = curDialog.find("[name=username]").val();
+				var password = curDialog.find("[name=password]").val();
+				var method = curDialog.find("[name=method]").val();
+				var performAuth = curDialog.find("[name=performAuth]").prop("checked");
+
+				//todo: change test here, too!
+				var testResult = testConnection(self, host, port, "test", performAuth, adminDatabase, username, password, method);
+				if(testResult !== true){
+					openDialog(self, "showMessage", "Test failed", testResult, "error");
+				}else{
+					openDialog(self, "showMessage", "Test successful", "Successfully connected, authenticated (if necesarry) and listed collections.", "success");
+				}
+			}
+
 			/**
 			 * Initialises the edit document dialog. This function usually cannot be called directly (except within
 			 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
@@ -375,7 +397,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					buttons: [
 						{text: "Test",
 						icons: {primary: "testIcon"},
-						click: TODO},
+						click: triggerConnectionTest},
 						{text: "Save",
 						click: function(){getSaveAction()(); $(this).dialog("close");}},
 						{text: "Cancel",

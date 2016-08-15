@@ -295,6 +295,47 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		dialog.dialog("open");
 	}
+
+	/**
+	 * Tests the db- and server-connection by connecting and listing the collection names on `database`. Does not change
+	 * the sideBar though (like connect does) and does not change the state-object of this mongobrowser (i.e. does not
+	 * store the connection).
+	 *
+	 * @param {MongoBrowser} self  - Please see Class/Namespace description!
+	 * @param {string} hostname   - the hostname under which the mongodb is accessible for the db-connection
+	 * @param {number} port       - the port at which the mongodb listens for the db-connection
+	 * @param {string} database   - the database name to connect to
+	 * @param {boolean} [performAuth=false] - whether to perform an authentication given the following parameters
+	 * @param {string} [adminDatabase=admin] - the admin database which stores the user credentials and roles
+	 * @param {string} [username=] - the username to authenticate with
+	 * @param {string} [password=] - the password to authenticate with
+	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 * @returns {boolean|string} true if the test was successful or a string describing the error
+	 */
+	function testConnection(self, hostname, port, database, performAuth, adminDatabase, username, password, method){
+		if(typeof performAuth === "undefined"){ performAuth = false; }
+		if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
+		if(typeof username === "undefined"){ username = ""; }
+		if(typeof password === "undefined"){ password = ""; }
+		if(typeof method === "undefined"){ method = "scram-sha-1"; }
+
+		try {
+			if(performAuth){
+				var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+			}else{
+				var db = MongoNS.simple_connect(hostname, port, database);
+			}
+			var mongo = db.getMongo();
+
+			mongo.getDB(database).getCollectionNames();
+		}catch(e){
+			return e.toString();
+		}
+
+		return true;
+	}
 	/******************************************************************************************************************
 	 *                                         BEGIN PUBLIC MEMBERS                                                   *
 	 *                     (the following functions will be exported via the MongoBrowser.prototype)                  *
@@ -426,7 +467,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 	var TabFactory = MongoBrowserNS.TabFactory;
 
-	var guiCommands = MongoBrowserNS.getGuiCommands(openDialog, getCurrentTab);
+	var guiCommands = MongoBrowserNS.getGuiCommands(openDialog, getCurrentTab, testConnection);
 	var createRootElement = guiCommands.createRootElement;
 	var createDialogs = guiCommands.createDialogs;
 	var createTabEnvironment = guiCommands.createTabEnvironment;
