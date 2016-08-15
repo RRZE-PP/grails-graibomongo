@@ -252,14 +252,19 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					try{
 						var newObj = MongoNS.execute(MongoNS, db, "(function(){ return "+ newVal.replace(/\n/g, "") +";})()");
 					}catch(e){
-						alert("Invalid JSON");
+						openDialog(self, "showMessage", "Invalid JSON", e.toString());
 						return;
 					}
 					if(typeof newObj === "undefined"){
-						alert("Invalid JSON");
+						openDialog(self, "showMessage", "Invalid JSON", "The object seems to be undefined");
 						return;
 					}
-					db.getCollection(collection).update({"_id": doc._id}, newObj);
+					try{
+						db.getCollection(collection).update({"_id": doc._id}, newObj);
+					}catch(e){
+						openDialog(self, "showMessage", "Could not update document", e.toString(), "error");
+						return;
+					}
 					$(this).dialog("close");
 				};
 				curDialog.dialog("option", "buttons", buttons);
@@ -464,10 +469,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Validate",
 						icons: {primary: "validateIcon"},
 						click: TODO},
-						{text: "Save",
-						click: TODO},
+						{text: "Save"}, //click-action will be set during dialog initialization
 						{text: "Cancel",
-						click: closeCurrentDialog
+						click: closeCurrentDialog,
 						}
 					],
 				modal: true,
@@ -502,7 +506,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Save",
 						click: TODO},
 						{text: "Cancel",
-						click: closeCurrentDialog,
+						click: closeCurrentDialog
 						}
 					],
 				modal: true,
