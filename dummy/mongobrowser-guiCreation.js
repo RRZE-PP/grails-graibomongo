@@ -295,6 +295,19 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				else
 					var id = doc._id.tojson();
 
+
+				var buttons = curDialog.dialog("option", "buttons");
+				buttons[0].click = function(){
+					try{
+						db.getCollection(collection).remove({"_id": doc._id});
+					}catch(e){
+						openDialog(self, "showMessage", "Could not remove document", e.toString(), "error");
+						return;
+					}
+					$(this).dialog("close");
+				};
+				curDialog.dialog("option", "buttons", buttons);
+
 				curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
 				curDialog.find(".info .connection span").text(connection);
 				curDialog.find(".info .database span").text(db.toString());
@@ -538,8 +551,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				autoOpen: false,
 				dialogClass: "mongoBrowser",
 				buttons:[
-						{text: "Yes",
-						click: TODO},
+						{text: "Yes"}, //click-action will be set during dialog initialization
 						{text: "No",
 						click: closeCurrentDialog
 						}
