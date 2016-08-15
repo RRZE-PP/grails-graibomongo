@@ -40,6 +40,10 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			/** @namespace dialogInitialisators
 			*/
 
+			function closeCurrentDialog(){
+				$(this).dialog("close");
+			}
+
 			/**
 			 * Initialises the connection settings dialog. This function usually cannot be called directly (except within
 			 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
@@ -401,9 +405,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Save",
 						click: function(){getSaveAction()(); $(this).dialog("close");}},
 						{text: "Cancel",
-						click: function() {
-							$( this ).dialog( "close" );
-							}
+						click: closeCurrentDialog
 						}
 					],
 					modal: true,
@@ -465,9 +467,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Save",
 						click: TODO},
 						{text: "Cancel",
-						click: function() {
-							$( this ).dialog( "close" );
-							}
+						click: closeCurrentDialog
 						}
 					],
 				modal: true,
@@ -482,9 +482,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				dialogClass: "mongoBrowser",
 				buttons:[
 						{text: "Cancel",
-						click: function() {
-							$( this ).dialog( "close" );
-							}
+						click: closeCurrentDialog
 						}
 					],
 				modal: true,
@@ -504,9 +502,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Save",
 						click: TODO},
 						{text: "Cancel",
-						click: function() {
-							$( this ).dialog( "close" );
-							}
+						click: closeCurrentDialog,
 						}
 					],
 				modal: true,
@@ -523,9 +519,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Yes",
 						click: TODO},
 						{text: "No",
-						click: function() {
-							$( this ).dialog( "close" );
-							}
+						click: closeCurrentDialog
 						}
 					],
 				modal: true,
@@ -540,9 +534,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				dialogClass: "mongoBrowser",
 				buttons:[
 						{text: "OK",
-						click: function() {
-							$( this ).dialog( "close" );
-							}
+						click: closeCurrentDialog
 						}
 					],
 				modal: true,
