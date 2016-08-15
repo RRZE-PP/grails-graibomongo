@@ -167,9 +167,6 @@ DBClientCursor.prototype.assembleCommandRequest = function(/*BClientWithCommands
                                /*StringData*/ database,
                                /*int*/ legacyQueryOptions,
                                /*BSONObj*/ legacyQuery) {
-
-    window.foobar = arguments;
-
     var upconvertedCommand = {};
     var upconvertedMetadata = {};
 
@@ -234,7 +231,7 @@ DBClientCursor.prototype._assembleInit = function() {
 
 DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ host) {
     // If this is a reply to our initial command request.
-    if (this._isCommand && this.cursorId == NumberLong(0)) {
+    if (this._isCommand && this.cursorId === NumberLong(0)) {
         this.commandDataReceived();
         return;
     }
@@ -288,7 +285,6 @@ DBClientCursor.prototype.commandDataReceived = function() {
 
     this.batch.nReturned = 1;
     this.batch.pos = 0;
-    window.foobar = this.batch
 
     var commandReply = this.batch.m;
 
@@ -479,7 +475,7 @@ Cursor = function(){
 }
 
 Cursor.eightArgsConstructor = function(ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize, connection){
-    return DBClientCursor.call(this, ns, query, 0 /*cursorId*/, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize, connection);
+    return DBClientCursor.call(this, ns, query, NumberLong(0) /*cursorId*/, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize, connection);
 }
 
 Cursor.fiveArgsConstructor = function(ns, cursorId, nToReturn, queryOptions, connection){
