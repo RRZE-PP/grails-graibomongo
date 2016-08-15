@@ -262,7 +262,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					try{
 						db.getCollection(collection).update({"_id": doc._id}, newObj);
 					}catch(e){
-						openDialog(self, "showMessage", "Could not update document", e.toString(), "error");
+						openDialog(self, "showMessage", "Could not insert document", e.toString(), "error");
 						return;
 					}
 					$(this).dialog("close");
@@ -317,6 +317,25 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			function initInsertDocumentDialog(db, collection){
 				var curDialog = self.uiElements.dialogs.insertDocument;
 				var connection = db.getMongo().host.substr(0, db.getMongo().host.indexOf("/"));
+
+
+				var buttons = curDialog.dialog("option", "buttons");
+				buttons[1].click = function(){
+					var newVal = self.uiElements.dialogs.insertDocument.find(".documentEditor").val();
+					try{
+						var newObj = MongoNS.execute(MongoNS, db, "(function(){ return "+ newVal.replace(/\n/g, "") +";})()");
+					}catch(e){
+						openDialog(self, "showMessage", "Invalid JSON", e.toString());
+						return;
+					}
+					if(typeof newObj === "undefined"){
+						openDialog(self, "showMessage", "Invalid JSON", "The object seems to be undefined");
+						return;
+					}
+					db.getCollection(collection).insert(newObj);
+					$(this).dialog("close");
+				};
+				curDialog.dialog("option", "buttons", buttons);
 
 				curDialog.find(".documentEditor").val("{\n\n}");
 				curDialog.find(".info .connection span").text(connection);
@@ -503,8 +522,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						{text: "Validate",
 						icons: {primary: "validateIcon"},
 						click: TODO},
-						{text: "Save",
-						click: TODO},
+						{text: "Save"}, //click-action will be set during dialog initialization
 						{text: "Cancel",
 						click: closeCurrentDialog
 						}
