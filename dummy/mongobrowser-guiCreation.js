@@ -316,6 +316,30 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 			}
 
+			/**
+			 * Initialises the show message dialog. This function usually cannot be called directly (except within
+			 * the function body of {@link MongoBrowser(NS)~createDialogs createDialogs }), but is called everytime
+			 * {@link MongoBrowser(NS)~openDialog openDialog } is called with "viewDocument" as first argument
+			 * and a <tt>MongoNS.DB</tt> and document as third and fourth parameter
+			 * @param {String} title - the title of the message
+			 * @param {String} message - the message to display
+			 * @param {String} [type] - a class to set on the icon div
+			 * @memberof dialogInitialisators~
+			 * @inner
+			 */
+			function initShowMessageDialog(title, message, type){
+				if(typeof type === "undefined")
+					type = "";
+
+				var curDialog = self.uiElements.dialogs.showMessage;
+
+				curDialog.find(".largeIcon").attr("class", "largeIcon " + type);
+				curDialog.find(".title").text(title);
+				curDialog.prev().find(".ui-dialog-title").text(title);
+				curDialog.attr("title", title);
+				curDialog.find(".content").text(message);
+			}
+
 			//begin connection manager
 			var curDialog = self.uiElements.dialogs.connectionManager =
 				self.rootElement.find(".connectionManager").dialog({
@@ -487,6 +511,23 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				height: "auto",
 			});
 			curDialog.initialise = initDeleteDocumentDialog;
+
+			//begin showMessage
+			curDialog = self.uiElements.dialogs.showMessage = self.rootElement.find(".showMessage").dialog({
+				autoOpen: false,
+				dialogClass: "mongoBrowser",
+				buttons:[
+						{text: "OK",
+						click: function() {
+							$( this ).dialog( "close" );
+							}
+						}
+					],
+				modal: true,
+				width: 750,
+				height: "auto"
+			});
+			curDialog.initialise = initShowMessageDialog;
 
 		}
 

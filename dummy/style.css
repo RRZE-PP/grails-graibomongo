@@ -443,6 +443,11 @@
 		font-weight: bold;
 	}
 
+	.mongoBrowser .window.showMessage .title {
+	    font-weight: bold;
+	}
+
+
 /*
  * Context menu
  */
@@ -518,6 +523,22 @@
 
 	.mongoBrowser .disabled {
 		color: #888888;
+	}
+
+	.mongoBrowser .largeIcon {
+		height: 50px;
+	    width: 50px;
+	    float: left;
+	    margin: 20px;
+	    background-repeat: no-repeat;
+	}
+
+	.mongoBrowser .largeIcon.error {
+	    background-image: url('images/error_48x48.png');
+	}
+
+	.mongoBrowser .largeIcon.success {
+		background-image: url('images/success_48x48.png');
 	}
 
 	/* Tabs
