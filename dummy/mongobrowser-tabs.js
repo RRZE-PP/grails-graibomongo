@@ -221,6 +221,10 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
 
 			if(ret instanceof MongoNS.DBQuery){
+				this.state.collection = ret._collection._shortName;
+				this.state.database = ret._database;
+
+				this.uiElements.info.database.text(ret._db._name);
 				this.uiElements.info.collection.text(ret._collection._shortName);
 				this.uiElements.info.collection.parent().show();
 				ret = ret._exec()
