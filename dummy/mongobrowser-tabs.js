@@ -61,10 +61,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		//calling this here fixes problems with minWidth
 		ui.resultsTable.resizableColumns({minWidth: 15});
 
+		var codeMirror = CodeMirror.fromTextArea(ui.prompt[0], {matchBrackets: true});
+
 		this.state.id = id;
 		this.state.db = database
 		this.state.collection = collection;
 		this.state.displayedResult = [];
+		this.state.codeMirror = codeMirror;
 
 	}
 
@@ -86,6 +89,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	ConnectionTab.prototype.appendTo = function(parent){
 		parent.append(this.uiElements.tab);
 		parent.children(".tabList").append(this.uiElements.link);
+
+		this.state.codeMirror.refresh();
 		parent.tabs("refresh");
 
 		//select the first tab, if no tab was selected before
@@ -218,7 +223,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			printedLines.push(line);
 		}
 		try {
-			var ret = MongoNS.execute(MongoNS, this.state.db, this.uiElements.prompt.val());
+			var ret = MongoNS.execute(MongoNS, this.state.db, this.state.codeMirror.getDoc().getValue());
 
 			if(ret instanceof MongoNS.DBQuery){
 				this.state.collection = ret._collection._shortName;
@@ -292,7 +297,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		self.uiElements.resultsTable.resizableColumns({minWidth: 15});
 		self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
 
-		self.setTitle(this.uiElements.prompt.val());
+		self.setTitle(this.state.codeMirror.getDoc().getValue());
 	}
 
 

@@ -151,7 +151,6 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	}
 
 	function handleKeypress(self, event){
-		console.log(event);
 		if(self.state.currentFocus === null)
 			return;
 
@@ -257,8 +256,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			return grantFocusTo(self.uiElements.sideBar, event);
 		});
 
-		self.uiElements.tabs.container.delegate(".promptContainer .prompt .userInput", "click", function(event){
-			return grantFocusTo($(event.currentTarget), event);
+		self.uiElements.tabs.container.delegate(".promptContainer .prompt .userInput, .promptContainer .prompt .CodeMirror", "click", function(event){
+			return grantFocusTo($(event.currentTarget).parent(), event);
 		});
 
 		self.uiElements.tabs.container.delegate(".resultsTable", "click focus", function(event){

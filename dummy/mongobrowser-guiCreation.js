@@ -248,7 +248,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 				var buttons = curDialog.dialog("option", "buttons");
 				buttons[1].click = function(){
-					var newVal = self.uiElements.dialogs.editDocument.find(".documentEditor").val();
+					var newVal = self.uiElements.dialogs.editDocument.codeMirror.getDoc().getValue();
 					try{
 						var newObj = MongoNS.execute(MongoNS, db, "(function(){ return "+ newVal.replace(/\n/g, "") +";})()");
 					}catch(e){
@@ -269,10 +269,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				};
 				curDialog.dialog("option", "buttons", buttons);
 
-				curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
 				curDialog.find(".info .connection span").text(connection);
 				curDialog.find(".info .database span").text(db.toString());
 				curDialog.find(".info .collection span").text(collection);
+				curDialog.codeMirror.getDoc().setValue(MongoNS.tojson(doc));
+				window.setTimeout(function(){curDialog.codeMirror.refresh()}, 0);
 			}
 
 
@@ -308,12 +309,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				};
 				curDialog.dialog("option", "buttons", buttons);
 
-				curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
 				curDialog.find(".info .connection span").text(connection);
 				curDialog.find(".info .database span").text(db.toString());
 				curDialog.find(".info .collection span").text(collection);
 				curDialog.find(".reallyDeleteQuestion .docId").text(id);
 
+				curDialog.codeMirror.getDoc().setValue(MongoNS.tojson(doc));
+				window.setTimeout(function(){curDialog.codeMirror.refresh()}, 0);
 			}
 
 
@@ -334,7 +336,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 				var buttons = curDialog.dialog("option", "buttons");
 				buttons[1].click = function(){
-					var newVal = self.uiElements.dialogs.insertDocument.find(".documentEditor").val();
+					var newVal = self.uiElements.dialogs.insertDocument.codeMirror.getDoc().getValue();
 					try{
 						var newObj = MongoNS.execute(MongoNS, db, "(function(){ return "+ newVal.replace(/\n/g, "") +";})()");
 					}catch(e){
@@ -350,11 +352,12 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				};
 				curDialog.dialog("option", "buttons", buttons);
 
-				curDialog.find(".documentEditor").val("{\n\n}");
 				curDialog.find(".info .connection span").text(connection);
 				curDialog.find(".info .database span").text(db.toString());
 				curDialog.find(".info .collection span").text(collection);
 
+				curDialog.codeMirror.getDoc().setValue("{\n\n}");
+				window.setTimeout(function(){curDialog.codeMirror.refresh()}, 0);
 			}
 
 			/**
@@ -372,11 +375,12 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				var curDialog = self.uiElements.dialogs.viewDocument;
 				var connection = db.getMongo().host.substr(0, db.getMongo().host.indexOf("/"));
 
-				curDialog.find(".documentEditor").val(MongoNS.tojson(doc));
 				curDialog.find(".info .connection span").text(connection);
 				curDialog.find(".info .database span").text(db.toString());
 				curDialog.find(".info .collection span").text(collection);
 
+				curDialog.codeMirror.getDoc().setValue(MongoNS.tojson(doc));
+				window.setTimeout(function(){curDialog.codeMirror.refresh()}, 0);
 			}
 
 			/**
@@ -510,6 +514,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				width: "auto",
 				height: "auto",
 			});
+			curDialog.codeMirror = CodeMirror.fromTextArea(curDialog.find(".userInput")[0], {matchBrackets: true});
 			curDialog.initialise = initEditDocumentDialog;
 
 			//begin document viewer
@@ -525,6 +530,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				width: "auto",
 				height: "auto",
 			});
+			curDialog.codeMirror = CodeMirror.fromTextArea(curDialog.find(".userInput")[0], {matchBrackets: true, readOnly: true});
 			curDialog.initialise = initViewDocumentDialog;
 
 			//begin document creator/insertor
@@ -544,6 +550,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				width: "auto",
 				height: "auto",
 			});
+			curDialog.codeMirror = CodeMirror.fromTextArea(curDialog.find(".userInput")[0], {matchBrackets: true});
 			curDialog.initialise = initInsertDocumentDialog;
 
 			//begin document delete
@@ -560,6 +567,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				width: "auto",
 				height: "auto",
 			});
+			curDialog.codeMirror = CodeMirror.fromTextArea(curDialog.find(".userInput")[0], {matchBrackets: true});
 			curDialog.initialise = initDeleteDocumentDialog;
 
 			//begin showMessage
