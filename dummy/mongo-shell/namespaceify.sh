@@ -54,5 +54,6 @@ echo "// ---- MODULE: upgrade_check ---- " >> "$FILENAME"; cat upgrade_check.js 
 echo "// ---- MODULE: utils_auth ---- " >> "$FILENAME";    cat utils_auth.js >> "$FILENAME";    echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: utils ---- " >> "$FILENAME";         cat utils.js >> "$FILENAME";         echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: utils_sh ---- " >> "$FILENAME";      cat utils_sh.js >> "$FILENAME";      echo -e "\n\n" >> "$FILENAME"
+echo "// ---- MODULE: codemirror_hinter ---- " >> "$FILENAME";  cat codemirror_hinter.js >> "$FILENAME"; echo -e "\n\n" >> "$FILENAME"
 
 sed -n -e '/\/\* *END_INSERT/,${//!p;}' namespaceTemplate.js >> "$FILENAME"

@@ -61,7 +61,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		//calling this here fixes problems with minWidth
 		ui.resultsTable.resizableColumns({minWidth: 15});
 
-		var codeMirror = CodeMirror.fromTextArea(ui.prompt[0], {matchBrackets: true});
+		var codeMirror = CodeMirror.fromTextArea(ui.prompt[0], {extraKeys: {"Ctrl-Space": "autocomplete"}, mode: {name: "javascript", mongo: true}, hintOptions: {hint: MongoNS.mongoDBHintAdapter, connectedTab: this}, matchBrackets: true});
 
 		this.state.id = id;
 		this.state.db = database
@@ -227,7 +227,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 			if(ret instanceof MongoNS.DBQuery){
 				this.state.collection = ret._collection._shortName;
-				this.state.database = ret._database;
+				this.state.db = ret._db;
 
 				this.uiElements.info.database.text(ret._db._name);
 				this.uiElements.info.collection.text(ret._collection._shortName);

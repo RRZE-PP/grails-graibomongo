@@ -70,7 +70,8 @@ var MongoNS = (function(){
 		rs,
 		_awaitRSHostViaRSMonitor,
 		help,
-		sh;
+		sh,
+		__autocomplete__;
 
 	var typedResult; //this is a very hacky one: someone forgot var in bul_api.js:1211, but we don't patch around in their source
 
@@ -110,7 +111,8 @@ var MongoNS = (function(){
 		ObjectId: ObjectId,
 		NumberLong: NumberLong,
 		tojson: tojson,
-		WriteResult: WriteResult
+		WriteResult: WriteResult,
+		mongoDBHintAdapter: mongoDBHintAdapter
 	};
 
 	return toBeAccessible;
