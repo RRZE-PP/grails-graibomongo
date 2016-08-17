@@ -264,6 +264,10 @@
 		margin-left: 45px;
 	}
 
+	.mongoBrowser .mainBody .tabContainer .buttonBar .pages span {
+		cursor: pointer;
+	}
+
 	.mongoBrowser .mainBody .tabContainer .resultsTableContainer {
 		min-height:300px;
 		background-color:#ddd;

@@ -48,7 +48,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 									   results: tab.find(".resultsTable tbody"),
 									   iterate: {
 									    	max: tab.find(".maxIterate"),
-									    	start: tab.find(".curIterate")
+									    	start: tab.find(".startIterate"),
+									    	prev: tab.find(".prevIterate"),
+									    	next: tab.find(".nextIterate")
 									   }
 									}
 
@@ -68,6 +70,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			 matchBrackets: true
 			});
 		codeMirror.on("focus", (function(self){return function(){self.uiElements.prompt.focus()}})(this));
+
+		ui.iterate.prev.on("click", (function(self){return function(){self.prevBatch()}})(this));
+		ui.iterate.next.on("click", (function(self){return function(){self.nextBatch()}})(this));
 
 		this.state.id = id;
 		this.state.db = database
@@ -112,6 +117,124 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	ConnectionTab.prototype.execute = function(){
 		var self = this;
 
+		var startTime = $.now();
+
+		//TODO: this fails if we yield the js thread (e.g. in an asynchronous ajax call?) before finishing MongoNS.execute and resetting the print fct
+		var printedLines = []
+		var oldPrint = MongoNS.__namespacedPrint;
+		MongoNS.__namespacedPrint = function(line){
+			printedLines.push(line);
+		}
+
+		try {
+			this.state.currentCursor = null;
+			this.state.currentQuery = null;
+
+			var ret = MongoNS.execute(MongoNS, this.state.db, this.state.codeMirror.getDoc().getValue());
+
+			if(ret instanceof MongoNS.DBQuery){
+				this.state.collection = ret._collection._shortName;
+				this.state.db = ret._db;
+				this.state.currentQuery = ret;
+
+				this.uiElements.info.database.text(ret._db._name);
+				this.uiElements.info.collection.text(ret._collection._shortName);
+				this.uiElements.info.collection.parent().show();
+				ret = ret._exec()
+			}else{
+				this.uiElements.info.collection.parent().hide();
+			}
+
+			if(ret instanceof MongoNS.WriteResult){
+				MongoNS.__namespacedPrint(ret.toString());
+				ret.__magicNoPrint = 1;
+			}
+		}catch(e){
+			var ret = undefined;
+			MongoNS.__namespacedPrint(e.toString());
+		}
+
+		var duration = $.now() - startTime;
+		this.uiElements.info.time.text(duration/1000);
+
+		this.uiElements.printContainer.hide()
+		this.uiElements.resultsTable.hide();
+		this.uiElements.printedLines.text("");
+		this.uiElements.results.children().remove();
+		this.uiElements.iterate.start.val(0);
+
+		if(typeof ret !== "undefined" && ret !== null && typeof ret.__magicNoPrint === "undefined"){
+			this.uiElements.resultsTable.show();
+
+			if(ret instanceof MongoNS.Cursor){
+				printBatch(this, ret, parseInt(self.uiElements.iterate.max.val()));
+			}else{
+				this.state.displayedResult = [ret];
+				printLine(this, "", "(" + 1 + ")", ret, 0).attr("data-index", 0);
+			}
+			this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
+			this.uiElements.results.children("[data-indent]").each(function(index, elem){
+				$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
+			});
+
+		}else if(printedLines.length === 0){
+			printedLines.push("Script executed successfully but there is no output to display.")
+		}
+
+		if(printedLines.length !== 0){
+			this.uiElements.printContainer.show();
+
+			var text = "";
+			for(var i=0; i < printedLines.length; i++){
+				text += printedLines[i] + "\n";
+			}
+			self.uiElements.printedLines.text(text);
+		}
+
+		self.uiElements.resultsTable.find("th").css("width", "");
+		self.uiElements.resultsTable.resizableColumns("destroy");
+		self.uiElements.resultsTable.prev(".resizableColumnsFix").remove();
+		self.uiElements.resultsTable.resizableColumns({minWidth: 15});
+		self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
+
+		self.setTitle(this.state.codeMirror.getDoc().getValue());
+	}
+
+	/**
+	 * Prints a batch of entries from the given cursor to the results table. Clears the table before printing.
+	 *
+	 * @param {ConnectionTab} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @param {MongoNS.Cursor} cursor - the cursor to take elements from
+	 * @param {number} count - the size of the batch
+	 */
+	function printBatch(self, cursor, count){
+		self.uiElements.results.children().remove();
+
+		self.state.displayedResult = [];
+		for(var i=0; i < count && cursor.more(); i++){
+			var val = cursor.next();
+			self.state.displayedResult.push(val);
+			var displayedKey = "(" + (i + 1) + ")";
+			if(val._id instanceof MongoNS.ObjectId)
+				displayedKey += " " + val._id.toString();
+			var lines = printLine(self, "", displayedKey, val, 0);
+			lines.attr("data-index", i);
+		}
+		self.state.currentCursor = cursor;
+	}
+
+	/**
+	 * Prints a line to the results table. A line represents an object or primitive object.
+	 *
+	 * @param {ConnectionTab} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @param {string} key - the key in the parent object or array
+	 * @param {string} displayedKey - the key in the parent object or array as it should be shown to the user (usually the same as key)
+	 * @param {anything} val - the value to display. can be any datatype
+	 * @param {number} indent - the indendation depth of this line (for root objects this should be 0)
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 */
+	function printLine(self, key, displayedKey, val, indent) {
 		function base_print(indent, image, alt, col1, col2, col3, hasChildren, key) {
 			var newLine = $("<tr data-indent='" + indent + "' data-key='" + key + "' class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
 				style='"+ (indent > 0 ? "display:none" : "") + "'> \
@@ -128,7 +251,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			var ret = base_print(indent, "bson_object_16x16.png", "object", displayedKey, "{ " + keys.length + " fields }", "Object", keys.length !== 0, key);
 
 			for(var i=0; i<keys.length; i++){
-				var newLine = printLine(keys[i], keys[i], val[keys[i]], indent + 1);
+				var newLine = printLine(self, keys[i], keys[i], val[keys[i]], indent + 1);
 				ret = ret.add(newLine);
 			}
 			return ret;
@@ -140,7 +263,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			var ret = base_print(indent, "bson_array_16x16.png", "array", displayedKey, "[ " + val.length + " Elements ]", "Array", keys.length !== 0, key);
 
 			for(var i=0; i<keys.length; i++){
-				var newLine = printLine(keys[i], "[" + keys[i] + "]", val[keys[i]], indent + 1);
+				var newLine = printLine(self, keys[i], "[" + keys[i] + "]", val[keys[i]], indent + 1);
 				ret = ret.add(newLine);
 			}
 
@@ -191,119 +314,32 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			return base_print(indent, "bson_unsupported_16x16.png", "unsupported", displayedKey, "", "unsupported", false, key);
 		}
 
-		function printLine(key, displayedKey, val, indent) {
-			if(val instanceof Array)
-				return printArray(key, displayedKey, val, indent);
-			else if(val instanceof MongoNS.ObjectId)
-				return printObjectId(key, displayedKey, val, indent);
-			else if(val instanceof MongoNS.NumberLong)
-				return printLong(key, displayedKey, val, indent);
-			else if(val instanceof RegExp)
-				return printRegExp(key, displayedKey, val, indent);
-			else if(val instanceof Date)
-				return printDate(key, displayedKey, val, indent);
-			else if(typeof val === "string" || val instanceof String)
-				return printString(key, displayedKey, val, indent);
-			else if((typeof val === "number" || val instanceof Number) && parseInt(val) === val)
-				return printInt(key, displayedKey, val, indent);
-			else if(typeof val === "number" || val instanceof Number)
-				return printDouble(key, displayedKey, val, indent);
-			else if(typeof val === "boolean")
-				return printBoolean(key, displayedKey, val, indent);
-			else if(val === null) //TODO: Int vs Double!
-				return printNull(key, displayedKey, val, indent);
-			else if(typeof val === "undefined")
-				return printUndefined(key, displayedKey, val, indent);
-			else if(typeof val === "object") //this comes last after all others have been ruled out
-				return printObject(key, displayedKey, val, indent);
-			else
-				return printUnsupported(key, displayedKey, val, indent); //should not happen
-		}
-
-		var startTime = $.now();
-
-		//TODO: this fails if we yield the js thread (e.g. in an asynchronous ajax call?) before finishing MongoNS.execute and resetting the print fct
-		var printedLines = []
-		var oldPrint = MongoNS.__namespacedPrint;
-		MongoNS.__namespacedPrint = function(line){
-			printedLines.push(line);
-		}
-		try {
-			var ret = MongoNS.execute(MongoNS, this.state.db, this.state.codeMirror.getDoc().getValue());
-
-			if(ret instanceof MongoNS.DBQuery){
-				this.state.collection = ret._collection._shortName;
-				this.state.db = ret._db;
-
-				this.uiElements.info.database.text(ret._db._name);
-				this.uiElements.info.collection.text(ret._collection._shortName);
-				this.uiElements.info.collection.parent().show();
-				ret = ret._exec()
-			}else{
-				this.uiElements.info.collection.parent().hide();
-			}
-
-			if(ret instanceof MongoNS.WriteResult){
-				MongoNS.__namespacedPrint(ret.toString());
-				ret.__magicNoPrint = 1;
-			}
-		}catch(e){
-			var ret = undefined;
-			MongoNS.__namespacedPrint(e.toString());
-		}
-
-		var duration = $.now() - startTime;
-		this.uiElements.info.time.text(duration/1000);
-
-		this.uiElements.printContainer.hide()
-		this.uiElements.resultsTable.hide();
-		this.uiElements.printedLines.text("");
-		this.uiElements.results.children().remove();
-
-		if(typeof ret !== "undefined" && ret !== null && typeof ret.__magicNoPrint === "undefined"){
-			this.uiElements.resultsTable.show();
-
-			if(ret instanceof MongoNS.Cursor){
-				this.state.displayedResult = [];
-				for(var i=0; i < parseInt(this.uiElements.iterate.max.val()) && ret.more(); i++){
-					var val = ret.next();
-					this.state.displayedResult.push(val);
-					var displayedKey = "(" + (i + 1) + ")";
-					if(val._id instanceof MongoNS.ObjectId)
-						displayedKey += " " + val._id.toString();
-					var lines = printLine("", displayedKey, val, 0);
-					lines.attr("data-index", i);
-				}
-			}else{
-				this.state.displayedResult = [ret];
-				printLine("", "(" + 1 + ")", ret, 0).attr("data-index", 0);
-			}
-			this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
-			this.uiElements.results.children("[data-indent]").each(function(index, elem){
-				$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
-			});
-
-		}else if(printedLines.length === 0){
-			printedLines.push("Script executed successfully but there is no output to display.")
-		}
-
-		if(printedLines.length !== 0){
-			this.uiElements.printContainer.show();
-
-			var text = "";
-			for(var i=0; i < printedLines.length; i++){
-				text += printedLines[i] + "\n";
-			}
-			self.uiElements.printedLines.text(text);
-		}
-
-		self.uiElements.resultsTable.find("th").css("width", "");
-		self.uiElements.resultsTable.resizableColumns("destroy");
-		self.uiElements.resultsTable.prev(".resizableColumnsFix").remove();
-		self.uiElements.resultsTable.resizableColumns({minWidth: 15});
-		self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
-
-		self.setTitle(this.state.codeMirror.getDoc().getValue());
+		if(val instanceof Array)
+			return printArray(key, displayedKey, val, indent);
+		else if(val instanceof MongoNS.ObjectId)
+			return printObjectId(key, displayedKey, val, indent);
+		else if(val instanceof MongoNS.NumberLong)
+			return printLong(key, displayedKey, val, indent);
+		else if(val instanceof RegExp)
+			return printRegExp(key, displayedKey, val, indent);
+		else if(val instanceof Date)
+			return printDate(key, displayedKey, val, indent);
+		else if(typeof val === "string" || val instanceof String)
+			return printString(key, displayedKey, val, indent);
+		else if((typeof val === "number" || val instanceof Number) && parseInt(val) === val)
+			return printInt(key, displayedKey, val, indent);
+		else if(typeof val === "number" || val instanceof Number)
+			return printDouble(key, displayedKey, val, indent);
+		else if(typeof val === "boolean")
+			return printBoolean(key, displayedKey, val, indent);
+		else if(val === null) //TODO: Int vs Double!
+			return printNull(key, displayedKey, val, indent);
+		else if(typeof val === "undefined")
+			return printUndefined(key, displayedKey, val, indent);
+		else if(typeof val === "object") //this comes last after all others have been ruled out
+			return printObject(key, displayedKey, val, indent);
+		else
+			return printUnsupported(key, displayedKey, val, indent); //should not happen
 	}
 
 
@@ -341,6 +377,57 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 */
 	ConnectionTab.prototype.id = function(){
 		return this.state.id;
+	}
+
+	/**
+	 * Gets the next batch of results from the cursor
+	 */
+	ConnectionTab.prototype.nextBatch = function(){
+		var start = parseInt(this.uiElements.iterate.start.val());
+		var count = parseInt(this.uiElements.iterate.max.val());
+
+		if(this.state.currentCursor === null)
+			return;
+
+		printBatch(this, this.state.currentCursor, count);
+
+		this.uiElements.iterate.start.val(start + count);
+
+		this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
+		this.uiElements.results.children("[data-indent]").each(function(index, elem){
+			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
+		});
+	}
+
+	/**
+	 * Gets the previous batch of results from the cursor
+	 */
+	ConnectionTab.prototype.prevBatch = function(){
+		var start = parseInt(this.uiElements.iterate.start.val());
+		var count = parseInt(this.uiElements.iterate.max.val());
+		var newStart = start - count < 0 ? 0 : start - count;
+
+		var curQuery = this.state.currentQuery;
+
+		if(curQuery === null)
+			return;
+
+		var origSkip = curQuery.origSkip || curQuery._skip;
+
+		curQuery = this.state.currentQuery = curQuery.clone();
+		this.state.currentQuery.origSkip = origSkip;
+
+		curQuery.skip(origSkip + newStart);
+
+		this.state.currentCursor = curQuery._exec();
+		printBatch(this, this.state.currentCursor, count);
+
+		this.uiElements.iterate.start.val(start - count);
+
+		this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
+		this.uiElements.results.children("[data-indent]").each(function(index, elem){
+			$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
+		});
 	}
 
 	/**
