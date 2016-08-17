@@ -23,6 +23,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   var statementIndent = parserConfig.statementIndent;
   var jsonldMode = parserConfig.jsonld;
   var jsonMode = parserConfig.json || jsonldMode;
+  var isMongo = parserConfig.mongo;
   var isTS = parserConfig.typescript;
   var wordRE = parserConfig.wordCharacters || /[\w$\xa1-\uffff]/;
 
@@ -45,6 +46,19 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       "yield": C, "export": kw("export"), "import": kw("import"), "extends": C,
       "await": C, "async": kw("async")
     };
+
+    // Extend with mongodb keywords
+    if(isMongo){
+      var mongoKeywords = {
+        "help": kw("help"),
+        "show": kw("show"),
+        "use": kw("use"),
+        "it": kw("it")
+      }
+      for (var attr in mongoKeywords) {
+        jsKeywords[attr] = mongoKeywords[attr];
+      }
+    }
 
     // Extend the 'normal' keywords with the TypeScript language extensions
     if (isTS) {
