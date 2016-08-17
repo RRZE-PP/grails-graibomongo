@@ -61,7 +61,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		//calling this here fixes problems with minWidth
 		ui.resultsTable.resizableColumns({minWidth: 15});
 
-		var codeMirror = CodeMirror.fromTextArea(ui.prompt[0], {extraKeys: {"Ctrl-Space": "autocomplete"}, mode: {name: "javascript", mongo: true}, hintOptions: {hint: MongoNS.mongoDBHintAdapter, connectedTab: this}, matchBrackets: true});
+		var codeMirror = CodeMirror.fromTextArea(ui.prompt[0],
+			{mode: {name: "javascript", mongo: true},
+			 extraKeys: {"Ctrl-Space": "autocomplete"},
+			 hintOptions: {hint: MongoNS.mongoDBHintAdapter, connectedTab: this},
+			 matchBrackets: true
+			});
+		codeMirror.on("focus", (function(self){return function(){self.uiElements.prompt.focus()}})(this));
 
 		this.state.id = id;
 		this.state.db = database
@@ -358,6 +364,15 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			this.uiElements.title.text(newTitle);
 
 		this.uiElements.title.attr("title", newTitle);
+	}
+
+	/**
+	 * Shows the hint in this tab's prompt
+	 * @method
+	 * @memberof ConnectionTab
+	 */
+	ConnectionTab.prototype.showHint = function() {
+		this.state.codeMirror.showHint({completeSingle: false, hint: MongoNS.mongoDBHintAdapter, connectedTab: this});
 	}
 
 	/**

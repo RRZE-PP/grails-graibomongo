@@ -3,7 +3,6 @@ function mongoDBHintAdapter(cm, callback, options){
 	var cursor = curDoc.getCursor();
 	var db = options.connectedTab.state.db;
 	var curLine = curDoc.getLine(cursor.line).substr(0, cursor.ch);
-	console.log("completing: "+curLine)
 	var list = modifiedShellAutocomplete(curLine, db);
 	callback({list:list, from: {line:cursor.line, ch:0}, to: cursor});
 

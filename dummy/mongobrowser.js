@@ -217,6 +217,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			}
 		}
 
+		if(self.state.currentFocus.is(".prompt")){
+			getCurrentTab(self).showHint();
+			return false;
+		}
+
 		return true;
 	}
 
@@ -256,7 +261,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			return grantFocusTo(self.uiElements.sideBar, event);
 		});
 
-		self.uiElements.tabs.container.delegate(".promptContainer .prompt .userInput, .promptContainer .prompt .CodeMirror", "click", function(event){
+		self.uiElements.tabs.container.delegate(".promptContainer .prompt .userInput, .promptContainer .prompt .CodeMirror", "click focus", function(event){
 			return grantFocusTo($(event.currentTarget).parent(), event);
 		});
 
