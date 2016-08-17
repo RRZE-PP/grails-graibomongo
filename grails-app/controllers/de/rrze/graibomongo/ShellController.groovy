@@ -6,6 +6,7 @@ import com.mongodb.MongoCredential
 import com.mongodb.MongoClientOptions
 import com.mongodb.MongoTimeoutException
 import com.mongodb.MongoCommandException
+import com.mongodb.MongoCursorNotFoundException
 import com.mongodb.MongoQueryException
 import com.mongodb.client.MongoDatabase
 import org.bson.json.JsonMode
@@ -268,40 +269,44 @@ class ShellController {
 			return
 		}
 		println(request)
+		try{
 
-		def conn = request.connection
+			def conn = request.connection
 
-		def cursorId = request.cursorId
-		def cursorKey = conn.hostname + conn.port + cursorId
+			def cursorId = request.cursorId
+			def cursorKey = conn.hostname + conn.port + cursorId
 
-		def nToReturn = request.nToReturn
-		if(nToReturn == 0)
-			nToReturn = 20;
+			def nToReturn = request.nToReturn
+			if(nToReturn == 0)
+				nToReturn = 20;
 
-		if(cursorKey in cursors){
-			def cursor = cursors[cursorKey][0];
+			if(cursorKey in cursors){
+				def cursor = cursors[cursorKey][0];
 
-			def data = []
-			for(int i=0; i<nToReturn; i++){
-				def item = cursor.tryNext()
-				if(item != null){
-					data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
-				}else{
-					break
+				def data = []
+				for(int i=0; i<nToReturn; i++){
+					def item = cursor.tryNext()
+					if(item != null){
+						data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
+					}else{
+						break
+					}
 				}
-			}
 
-			if(cursor.getServerCursor() == null){
-				cursors[cursorKey][1].close()
-				cursors.remove(cursorKey);
-				cursorId = 0;
-			}
+				if(cursor.getServerCursor() == null){
+					cursors[cursorKey][1].close()
+					cursors.remove(cursorKey);
+					cursorId = 0;
+				}
 
-			render([nReturned: data.size(),
-					data: data,
-					resultFlags: 0,
-					cursorId: "NumberLong(\"" + cursorId + "\")"] as JSON)
-		}else{
+				render([nReturned: data.size(),
+						data: data,
+						resultFlags: 0,
+						cursorId: "NumberLong(\"" + cursorId + "\")"] as JSON)
+			}else{
+				render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
+			}
+		}catch(MongoCursorNotFoundException e){
 			render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
 		}
 	}
