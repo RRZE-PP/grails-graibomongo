@@ -45,7 +45,7 @@
 	}
 
 	.mongoBrowser .actionBar .button.inactive {
-		cursor:not-allowed;
+		cursor: not-allowed;
 		filter: grayscale(1);
 		-webkit-filter: grayscale(1);
 	}
