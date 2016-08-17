@@ -563,7 +563,9 @@
 		}
 
 		.mongoBrowser .CodeMirror  .CodeMirror-code .cm-variable,
-		.mongoBrowser .CodeMirror  .CodeMirror-code .cm-property {
+		.mongoBrowser .CodeMirror  .CodeMirror-code .cm-property,
+		.mongoBrowser .CodeMirror  .CodeMirror-code .cm-keyword,
+		.mongoBrowser .CodeMirror  .CodeMirror-code .cm-def {
 			color: #fff;
 		}
 
