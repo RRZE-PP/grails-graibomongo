@@ -18,10 +18,12 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
 	 * @param {MongoNS.DB} database - the database to which db should equate in this tab
 	 * @param {string} collection - the default collection to use
+	 * @param {MongoBrowser~options} options - the default options which were passed to the instantiating mongobrowser
 	 */
-	function ConnectionTab(prefix, dummyLink, dummyTab, database, collection){
+	function ConnectionTab(prefix, dummyLink, dummyTab, database, collection, options){
 		this.uiElements = {};
 		this.state = {};
+		this.options = options;
 
 		var link = this.uiElements.link = dummyLink.clone();
 		var tab = this.uiElements.tab = dummyTab.clone();
@@ -238,7 +240,10 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		function base_print(indent, image, alt, col1, col2, col3, hasChildren, key) {
 			var newLine = $("<tr data-indent='" + indent + "' data-key='" + key + "' class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
 				style='"+ (indent > 0 ? "display:none" : "") + "'> \
-				<td><span class='foldIcon'>&nbsp;</span> <img src='images/" + image + "' class='typeIcon' alt='" + alt + "' /> " + col1 + "</td> \
+				<td><span class='foldIcon'>&nbsp;</span> \
+					<img src='" + self.options.assetPrefix + "assets/images/" + image + "' class='typeIcon' alt='" + alt + "' /> " +
+					col1 +
+				"</td> \
 				<td>" + col2 + "</td> \
 				<td>" + col3 + "</td></tr>");
 			newLine.appendTo(self.uiElements.results);
@@ -469,11 +474,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {JQuery} dummyLink - a jQuery wrapped <tt>HTMLElement</tt> (LI) to append as tab handle. Must
 	 *                             contain a .tabText to put the tab title in
 	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
+	 * @param {MongoBrowser~options} options - the default options which were passed to the instantiating mongobrowser
 	 */
-	function TabFactory(dummyLink, dummyTab){
+	function TabFactory(dummyLink, dummyTab, options){
 		this.prefix = "tabs"+TabFactory.instances++;
 		this.dummyLink = dummyLink;
 		this.dummyTab = dummyTab;
+		this.options = options;
 	}
 
 	/** The total number of factories created to savely create unique IDs
@@ -493,7 +500,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @returns {ConnectionTab} the constructed ConnectionTab
 	 */
 	TabFactory.prototype.newTab = function(database, collection){
-		return new ConnectionTab(this.prefix, this.dummyLink, this.dummyTab, database, collection);
+		return new ConnectionTab(this.prefix, this.dummyLink, this.dummyTab, database, collection, this.options);
 	}
 
 

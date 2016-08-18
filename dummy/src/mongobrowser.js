@@ -42,7 +42,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			return new MongoBrowser(appendTo, options);
 
 		var self = this;
-		self.options = typeof options !== "undefined" ? options : {};
+		var options = self.options = typeof options !== "undefined" ? options : {};
+		options.assetPrefix = typeof options.assetPrefix !== "undefined" ? options.assetPrefix : "";
 
 		self.state = {
 			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
@@ -512,4 +513,5 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
  * @property {String} [window] - controlls the main window. if it is set to "moveable" the window will behave like a regular
  *                               dialog (mimicing a window in MS Windows). If set to "resizable" it's a static div, but you
  *                               can change its size
+ * @property {String} [assetPrefix] - a prefix to prepend to assets. can be used to redirect e.g. images to a cdn.
  */

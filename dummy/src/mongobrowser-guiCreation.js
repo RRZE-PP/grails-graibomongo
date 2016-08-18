@@ -597,10 +597,16 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		 */
 		function createRootElement(self) {
 			var fragment = $("#MongoBrowserDummy");
+			var assetPrefix = self.options.assetPrefix;
+
 
 			if(fragment.size() === 0){
-				// TODO
-				throw new Error("Creating UI from scratch is not yet implemented");
+				$.get({url: assetPrefix + "assets/mongobrowser.tpl", async: false})
+				 .done(function(data){fragment = $(data)})
+				 .error(function(){
+					// TODO
+					throw new Error("Could not load fragment. Creating UI from scratch is not yet implemented");
+				 });
 			}
 
 			if(typeof fragment[0].content === "undefined"){
@@ -611,6 +617,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			}
 
 			self.rootElement = self.uiElements.root = dummy;
+			if(assetPrefix !== ""){
+				self.rootElement.find("img").each(
+					function(idx, elem){$(elem).attr('src', assetPrefix + $(elem).attr('src'))}
+				);
+			}
 		}
 
 		/**
@@ -650,7 +661,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			var dummyTab = container.children("div").eq(0);
 			var dummyLink = container.find("li").eq(0);
 
-			self.state.tabFactory = new TabFactory(dummyLink.clone().css("display", ""), dummyTab.clone().css("display", ""));
+			self.state.tabFactory = new TabFactory(dummyLink.clone().css("display", ""), dummyTab.clone().css("display", ""), self.options);
 
 			dummyLink.remove();
 			dummyTab.remove();

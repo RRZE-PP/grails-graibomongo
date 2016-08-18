@@ -128,22 +128,22 @@
 	}
 
 	.mongoBrowser .sideBar li.server > .icon {
-		background: url(images/server_16x16.png) no-repeat;
+		background: url(assets/images/server_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
 	.mongoBrowser .sideBar li.database > .icon{
-		background: url(images/database_16x16.png) no-repeat;
+		background: url(assets/images/database_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
 	.mongoBrowser .sideBar li.folder > .icon {
-		background: url(images/folder_16x16.png) no-repeat;
+		background: url(assets/images/folder_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
 	.mongoBrowser .sideBar li.collection > .icon {
-		background: url(images/collection_16x16.png) no-repeat;
+		background: url(assets/images/collection_16x16.png) no-repeat;
 		background-position: 0px 2px;
 	}
 
@@ -393,7 +393,7 @@
     }
 
 	.mongoBrowser .window.connectionManager ~ div.ui-dialog-buttonpane .connectIcon {
-		background: url('images/server_16x16.png') no-repeat;
+		background: url('assets/images/server_16x16.png') no-repeat;
 		width: 16px;
 		height: 16px;
 	}
@@ -403,7 +403,7 @@
 	}
 
 	.mongoBrowser .window.connectionSettings ~ div.ui-dialog-buttonpane .testIcon {
-		background: url('images/server_16x16.png') no-repeat;
+		background: url('assets/images/server_16x16.png') no-repeat;
 		width: 16px;
 		height: 16px;
 	}
@@ -446,7 +446,7 @@
 
 	.mongoBrowser .window.editDocument ~ div.ui-dialog-buttonpane .validateIcon,
 	.mongoBrowser .window.insertDocument ~ div.ui-dialog-buttonpane .validateIcon {
-		background: url('images/webmichl-light-bulb-14x24.png') no-repeat;
+		background: url('assets/images/webmichl-light-bulb-14x24.png') no-repeat;
 		width: 14px;
 		height: 24px;
 		top:9px;
@@ -548,11 +548,11 @@
 	}
 
 	.mongoBrowser .largeIcon.error {
-	    background-image: url('images/error_48x48.png');
+	    background-image: url('assets/images/error_48x48.png');
 	}
 
 	.mongoBrowser .largeIcon.success {
-		background-image: url('images/success_48x48.png');
+		background-image: url('assets/images/success_48x48.png');
 	}
 
 	/* Match Robomongo syntax highlighting for CodeMirror
@@ -692,4 +692,13 @@
 
 .ui-dialog .ui-dialog-title {
 	float: none !important;
+}
+
+.mongoBrowser .CodeMirror-scroll,
+.mongoBrowser .CodeMirror-sizer,
+.mongoBrowser .CodeMirror-gutter,
+.mongoBrowser .CodeMirror-gutters,
+.mongoBrowser .CodeMirror-linenumber {
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
 }
