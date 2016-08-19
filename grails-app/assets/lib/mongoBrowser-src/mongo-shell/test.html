@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+
+  	<link rel="stylesheet" href="https://code.jquery.com/qunit/qunit-1.23.1.css">
+
+	<title>Browser-Mongo-shell Testsuite</title>
+
+	<script>
+		//expose some otherwise private API to make tests more atomic
+		window.__unittesting__ = true;
+	</script>
+
+	<script type="text/javascript" src="bson.js"></script>
+	<script type="text/javascript" src="assert.js"></script>
+
+	<script type="text/javascript" src="port_bson.js"></script>
+	<script type="text/javascript" src="port_misc.js"></script>
+
+	<script type="text/javascript" src="error_codes.js"></script>
+	<script type="text/javascript" src="port_cursor.js"></script>
+	<script type="text/javascript" src="collection.js"></script>
+	<script type="text/javascript" src="bridge.js"></script>
+	<script type="text/javascript" src="bulk_api.js"></script>
+	<script type="text/javascript" src="crud_api.js"></script>
+	<script type="text/javascript" src="db.js"></script>
+	<script type="text/javascript" src="explainable.js"></script>
+	<script type="text/javascript" src="explain_query.js"></script>
+
+	<script type="text/javascript" src="mongo.js"></script>
+	<script type="text/javascript" src="port_mongo.js"></script>
+	<script type="text/javascript" src="port_rpc.js"></script>
+
+	<script type="text/javascript" src="mr.js"></script>
+	<script type="text/javascript" src="query.js"></script>
+	<script type="text/javascript" src="replsettest.js"></script>
+	<script type="text/javascript" src="servers.js"></script>
+	<script type="text/javascript" src="servers_misc.js"></script>
+	<script type="text/javascript" src="shardingtest.js"></script>
+	<script type="text/javascript" src="types.js"></script>
+	<script type="text/javascript" src="upgrade_check.js"></script>
+	<script type="text/javascript" src="utils_auth.js"></script>
+	<script type="text/javascript" src="utils.js"></script>
+	<script type="text/javascript" src="utils_sh.js"></script>
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.12.3.min.js"></script>
+	<script src="https://code.jquery.com/qunit/qunit-1.23.1.js"></script>
+</head>
+
+<body>
+	<div id="qunit"></div>
+	<div id="qunit-fixture"></div>
+
+	<script>
+		QUnit.module("Test RPC Module");
+		QUnit.test("Submodule AuditMetadata", function(){
+			var command = {key: "val", key2: "val2"};
+
+			var upconverted1 = {};
+			var upconverted2 = {key3: "val3"};
+
+			var result2 = {key: "val", key2: "val2", key3: "val3"};
+
+			rpc.__unittesting__.AuditMetadata.upconvert(command, 0, upconverted1, {});
+			rpc.__unittesting__.AuditMetadata.upconvert(command, 0, upconverted2, {});
+
+			QUnit.assert.deepEqual(upconverted1, command, "copying data");
+			QUnit.assert.deepEqual(upconverted2, result2, "leaving old data intact");
+		});
+
+		QUnit.test("Submodule ServerSelectionMetadata", function(){
+			var command = {"update": "foo",
+							"updates": [{"q":{"foo":42}, "u":{"bar":23}, "multi":false, "upsert":false}],
+							"ordered": true };
+
+			var upconvertedCommand_expected = {"update":"foo","updates":[{"q":{"foo":42},"u":{"bar":23},"multi":false,"upsert":false}],"ordered":true};
+
+			var upconvertedCommand = {};
+			var upconvertedMetadata = {};
+
+			rpc.__unittesting__.ServerSelectionMetadata.upconvert(command, 0, upconvertedCommand, upconvertedMetadata);
+
+			QUnit.assert.deepEqual(upconvertedCommand, upconvertedCommand_expected, "copying data");
+			QUnit.assert.deepEqual(upconvertedMetadata, {}, "leave metadata alone");
+			//TODO: For better coverage, test legacy stuff, too (even though we'll probably never need it)
+		});
+	</script>
+</body>
+</html>
