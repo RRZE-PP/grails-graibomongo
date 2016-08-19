@@ -1,0 +1,17 @@
+/*
+*= require mongoBrowser-src/assets/lib/jquery-ui-1.11.4.custom/jquery-ui.structure.min.css
+
+<!-- contextMenu -->
+*= require mongoBrowser-src/assets/lib/jquery-contextMenu/jquery.contextMenu.min.css
+
+<!-- clipboard -->
+*= require mongoBrowser-src/assets/lib/jquery-resizable-columns/jquery.resizableColumns.css
+
+<!-- codemirror -->
+*= require mongoBrowser-src/assets/lib/codemirror/lib/codemirror.css
+*= require mongoBrowser-src/assets/lib/codemirror/addon/hint/show-hint.css
+
+<!-- application -->
+*= require mongoBrowser-src/mongobrowser.css
+
+*/
