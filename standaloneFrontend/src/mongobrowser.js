@@ -43,7 +43,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		var self = this;
 		var options = self.options = typeof options !== "undefined" ? options : {};
-		options.assetPrefix = typeof options.assetPrefix !== "undefined" ? options.assetPrefix : "";
+
+		function def(optionName, defValue){
+			options[optionName] = (typeof options[optionName] === "undefined") ? defValue : options[optionName];
+		}
+
+		def("assetPrefix",  "");
+		def("window", "resizable");
 
 		self.state = {
 			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
@@ -61,10 +67,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		self.rootElement.attr("id", "mongoBrowser-"+self.instanceNo)
 		self.rootElement.css("display", "");
 
-		if(options.window === "moveable")
-			self.rootElement.dialog({minWidth:642, minHeight:550});
-		else if(options.window === "resizable")
-			self.rootElement.resizable({minWidth:642, minHeight:550});
+		self.rootElement.resizable({minWidth:642, minHeight:550});
+
+		var optionKeys = Object.keys(options);
+		for(var i = 0; i < optionKeys.length; i++){
+			var option = optionKeys[i];
+			self.option(option, options[option]);
+		}
 
 		MongoBrowser.instances["mongoBrowser-"+self.instanceNo] = self;
 	}
@@ -341,6 +350,18 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		return true;
 	}
+
+
+	function windowMode(self, action){
+		if(action === "enter"){
+			self.rootElement.dialog({minWidth:642, minHeight:550});
+			self.uiElements.menuBar.find("[name='windowMode']").prop("checked", true);
+		}else if(action === "leave"){
+			self.rootElement.is(".ui-dialog-content") && self.rootElement.dialog("destroy");
+			self.uiElements.menuBar.find("[name='windowMode']").prop("checked", false);
+		}
+	}
+
 	/******************************************************************************************************************
 	 *                                         BEGIN PUBLIC MEMBERS                                                   *
 	 *                     (the following functions will be exported via the MongoBrowser.prototype)                  *
@@ -463,12 +484,31 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		}catch(e){
 			openDialog(self, "showMessage", "Could not connect", e.toString(), "error");
 		}
+	}
+
+	function option(self, option, value){
+		if(typeof value === "undefined")
+			return self.options[option];
+
+		var optionCallbacks = {
+			autoExecuteCode: function(v) {self.uiElements.menuBar.find("[name='autoExecuteCode']").prop("checked", v);},
+			expandFirstDoc: function(v) {self.uiElements.menuBar.find("[name='expandFirstDoc']").prop("checked", v);},
+			window: function(v) {if(v === "moveable") windowMode(self, "enter");
+			                     else if(v === "resizable") windowMode(self, "leave");
+			                     else return false}
+		}
+
+		if(typeof optionCallbacks[option] === "function" && optionCallbacks[option](value) === false)
+			return;
+
+		self.options[option] = value;
 
 	}
 
 	//Export MongoBrowser API
 	MongoBrowser.prototype.addConnectionPreset = function(){Array.prototype.unshift.call(arguments, this); return addConnectionPreset.apply(this, arguments)};
 	MongoBrowser.prototype.connect             = function(){Array.prototype.unshift.call(arguments, this); return connect.apply(this, arguments)};
+	MongoBrowser.prototype.option              = function(){Array.prototype.unshift.call(arguments, this); return option.apply(this, arguments)};
 
 	//Import dependencies
 	if(typeof MongoBrowserNS === "undefined")
