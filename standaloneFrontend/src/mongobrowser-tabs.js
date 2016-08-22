@@ -428,7 +428,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		this.state.currentCursor = curQuery._exec();
 		printBatch(this, this.state.currentCursor, count);
 
-		this.uiElements.iterate.start.val(start - count);
+		this.uiElements.iterate.start.val(newStart);
 
 		this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
