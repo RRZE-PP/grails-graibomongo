@@ -50,6 +50,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		def("assetPrefix",  "");
 		def("window", "resizable");
+		def("autoExecuteCode", true);
+		def("expandFirstDoc", true);
 
 		self.state = {
 			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
@@ -141,7 +143,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	function addTab(self, database, collection){
 		var tab = self.state.tabFactory.newTab(database, collection);
 		tab.appendTo(self.uiElements.tabs.container);
-		tab.execute();
+		if(self.options.autoExecuteCode)
+			tab.execute();
 		tab.select();
 		self.state.tabs[tab.id()] = tab;
 	}
@@ -244,6 +247,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	function initUIElements(self){
 		self.uiElements = {root:null, dialogs: {}, tabs:{}, buttons:{}, sideBar:null};
 		createRootElement(self);
+		createMenuBar(self);
 		createDialogs(self);
 		createTabEnvironment(self);
 		createActionBarButtons(self);
@@ -522,6 +526,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	var createTabEnvironment = guiCommands.createTabEnvironment;
 	var createActionBarButtons = guiCommands.createActionBarButtons;
 	var createSidebarEnvironment = guiCommands.createSidebarEnvironment;
+	var createMenuBar = guiCommands.createMenuBar;
 
 	//Export MongoBrowser as global name
 	window.MongoBrowser = MongoBrowser;

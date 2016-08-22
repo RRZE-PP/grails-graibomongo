@@ -1,7 +1,18 @@
 <template id="MongoBrowserDummy">
 	<div style="width:1000px; border-radius:2px;padding:1px;border:2px solid #333; display:none"  tabindex="-1">
 		<div style="" class="menuBar">
-			<span>File</span> <span>Options</span> <span>Help</span>
+			<span class="menuRootElem">File
+					<ul><li data-callback='openConnection'>Open Connection</li></ul>
+			</span>
+			<span class="menuRootElem hasCheckbox">Options
+					<ul><li data-callback='windowMode'><label><input type="checkbox" name="windowMode"><div>Window mode</div></label></li>
+						<li data-callback='expandFirstDoc'><label><input type="checkbox" name="expandFirstDoc"><div>Auto expand first document</div></label></li>
+						<li data-callback='autoExecuteCode'><label><input type="checkbox" name="autoExecuteCode"><div>Automatically execute code in new tab</div></label></li></ul>
+			</span>
+			<span class="menuRootElem">Help
+					<ul><li data-callback='about'>About</li>
+						<li><a href="https://github.com/RRZE-PP/grails-graibomongo/issues/new">Report Bug or Feature Request</a></li></ul>
+			</span>
 		</div>
 		<div style="display:flex; flex-direction:row;" class="actionBar">
 			<div class="connectionButton dropDown button"><img src="assets/images/connect_24x24.png" /></div>

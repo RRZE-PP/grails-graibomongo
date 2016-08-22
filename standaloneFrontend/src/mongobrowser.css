@@ -8,13 +8,62 @@
 
 		font-size: 14px;
 		border-bottom: 1px solid #aaa;
-		padding:3px;
 		flex-shrink:0;
 	}
 
-	.mongoBrowser .menuBar > span {
-		margin-right: 10px;
+	.mongoBrowser .menuBar .menuRootElem {
+		position: relative;
+		cursor: pointer;
+		padding: 4px;
+		padding-right: 10px;
+		line-height: 26px;
 	}
+
+	.mongoBrowser .menuBar .menuRootElem *:not(.disabled){
+		cursor: pointer;
+	}
+
+	.mongoBrowser .menuBar .menuRootElem.active,
+	.mongoBrowser .menuBar .menuRootElem ul.ui-menu .ui-menu-item:hover {
+		background-color: #7299cd;
+	}
+
+	.mongoBrowser .menuBar .menuRootElem ul.ui-menu {
+		position: absolute;
+		display: none;
+
+		min-width: 250px;
+		border-style: solid;
+		border-color: #aaaaaa;
+		border-width: 0px 1px 1px;
+		background: #e8ecf0;
+		top: 100%;
+		left: 0px;
+		z-index: 5;
+		box-shadow: 5px 6px 20px -9px;
+
+		line-height: 17px;
+	}
+
+	.mongoBrowser .menuBar .menuRootElem ul.ui-menu .ui-menu-item {
+		padding: 3px;
+	}
+
+	.mongoBrowser .menuBar .menuRootElem ul.ui-menu.hasCheckbox {
+
+	}
+
+
+	.mongoBrowser .menuBar .menuRootElem.hasCheckbox input {
+		float:left;
+		width: 25px;
+	}
+
+	.mongoBrowser .menuBar .menuRootElem.hasCheckbox input + div{
+		width: calc( 100% - 25px);
+	}
+
+
 
 
 /* actionBar
@@ -692,6 +741,14 @@
 
 .ui-dialog .ui-dialog-title {
 	float: none !important;
+}
+
+.mongoBrowser .menuBar .ui-menu .ui-menu-item-wrapper {
+	padding: 0;
+}
+
+.mongoBrowser .menuBar  .ui-menu .ui-state-active {
+	margin: 0;
 }
 
 .mongoBrowser .CodeMirror-scroll,

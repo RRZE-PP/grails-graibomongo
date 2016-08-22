@@ -801,12 +801,60 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			}
 		}
 
+		function createMenuBar(self){
+			var bar = self.uiElements.menuBar = self.rootElement.find(".menuBar");
+
+			function openMenu(rootItem){
+				bar.not(rootItem).find(".ui-menu").hide();
+				bar.find(".active").removeClass("active");
+
+				rootItem.find(".ui-menu").toggle();
+				rootItem.addClass("active");
+			}
+
+			var menuCallbacks = {
+				openConnection: function() { openDialog(self, "connectionManager");},
+				windowMode: function() { if(!$(this).find("input").prop("checked"))
+												self.option("window", "moveable");
+											else
+												self.option("window", "resizable");
+										},
+				expandFirstDoc: function() { self.option("expandFirstDoc", !$(this).find("input").prop("checked"));},
+				autoExecuteCode: function() { self.option("autoExecuteCode", !$(this).find("input").prop("checked"));},
+				about: function() {openDialog(self, "showMessage", "About", "MongoBrowser was based on Robomongo. However we are not affiliated with them. If you like this application, try the full blown desktop app!");}
+			}
+
+			bar.find(".menuRootElem > ul").menu();
+			bar.find(".menuRootElem").on("click", function(event){
+				var elem = $(event.currentTarget);
+				openMenu(elem);
+			});
+			bar.find(".menuRootElem").on("mouseenter", function(){
+				if(bar.find(".active").size() > 0){
+					var elem = $(event.currentTarget);
+					openMenu(elem);
+				}
+			});
+			bar.on("mouseleave", function(event){
+				bar.find(".ui-menu").hide();
+				bar.find(".active").removeClass("active");
+			});
+
+			bar.find("li").on("click", function(event){
+				if(typeof menuCallbacks[this.getAttribute("data-callback")] === "function"){
+					menuCallbacks[this.getAttribute("data-callback")].call(this, event);
+					return false;
+				}
+			});
+		}
+
 		return {
 			createRootElement: createRootElement,
 			createDialogs: createDialogs,
 			createTabEnvironment: createTabEnvironment,
 			createActionBarButtons: createActionBarButtons,
-			createSidebarEnvironment: createSidebarEnvironment
+			createSidebarEnvironment: createSidebarEnvironment,
+			createMenuBar: createMenuBar
 		}
 	}
 
