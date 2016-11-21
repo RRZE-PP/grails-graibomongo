@@ -15,6 +15,8 @@ import org.bson.BsonDocument
 
 import grails.converters.JSON
 
+import java.util.TreeMap
+
 class ResultFlagType {
     /* returned, with zero results, when getMore is called but the cursor id
        is not valid at the server. */
@@ -145,7 +147,13 @@ class RequestMoreRequest implements grails.validation.Validateable {
 class ShellController {
 
 	final int SERVER_SELECT_TIMEOUT_MS = 1000;
+	final int CLIENT_EXPIRATION_S = 15
+
 	static cursors = [:];
+	//TODO synchronize access
+	static SortedMap<Long, String> clientAge = new TreeMap<Long, String>()
+	static lastClientUsage = [:]
+	static Object ageLock = new Object()
 
     def index(){
     	render "some text"
@@ -166,6 +174,7 @@ class ShellController {
 		def conn = request.connection
 
 		try{
+			//TODO: check if a mongoclient could be reused (address + auth) and reuse it if possible
 			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
 			                                  conn.getAuthList(),
 			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
@@ -198,9 +207,38 @@ class ShellController {
 		}
 		println(request)
 
+		//prune expired clients
+		def expiredBefore = System.currentTimeMillis() - CLIENT_EXPIRATION_S * 1000
+		synchronized(ageLock){
+			println "Checking expiration"
+			def stillInUse = [:]
+			for(def cursorKey : clientAge.headMap(expiredBefore).values()){
+				print cursorKey
+				if(lastClientUsage.containsKey(cursorKey) && lastClientUsage[cursorKey] > expiredBefore){
+					//this client is old, but still in use
+					println " is still in use"
+					stillInUse[lastClientUsage[cursorKey]] = cursorKey
+					continue
+				}
+
+				if(!cursors.containsKey(cursorKey))
+					continue
+
+				println " is expired"
+
+				cursors[cursorKey][0].close()
+				cursors[cursorKey][1].close()
+				cursors.remove(cursorKey)
+			}
+
+			clientAge.headMap(expiredBefore).clear()
+			clientAge.putAll(stillInUse)
+		}
+
 		def conn = request.connection
 
 		try{
+			//TODO: check if a mongoclient could be reused (address + auth) and reuse it if possible
 			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
 			                                  conn.getAuthList(),
 			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
@@ -238,8 +276,15 @@ class ShellController {
 			def scursor = cursor.getServerCursor()
 			def cursorId = 0;
 			if(!isFindOne && scursor != null){
-				cursorId = scursor?.getId();
-				cursors[conn.hostname + conn.port + cursorId] = [cursor, mc]
+				cursorId = scursor?.getId()
+				def cursorKey = conn.hostname + conn.port + cursorId
+				synchronized(ageLock){
+					cursors[cursorKey] = [cursor, mc]
+					def curTime = System.currentTimeMillis()
+					while(clientAge.containsKey(curTime))//TODO: now there's at most 1000 connections/second :(
+						curTime = System.currentTimeMillis()
+					clientAge.put(curTime, cursorKey)
+				}
 			}else{
 				mc.close()
 			}
@@ -280,32 +325,40 @@ class ShellController {
 			if(nToReturn == 0)
 				nToReturn = 20;
 
-			if(cursorKey in cursors){
-				def cursor = cursors[cursorKey][0];
-
-				def data = []
-				for(int i=0; i<nToReturn; i++){
-					def item = cursor.tryNext()
-					if(item != null){
-						data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
-					}else{
-						break
-					}
+			def cursor = null
+			synchronized(ageLock){
+				if(cursorKey in cursors){
+					cursor = cursors[cursorKey][0]
+					lastClientUsage[cursorKey] = System.currentTimeMillis()
+				}else{
+					render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
+					return
 				}
+			}
 
-				if(cursor.getServerCursor() == null){
+			def data = []
+			for(int i=0; i<nToReturn; i++){
+				def item = cursor.tryNext()
+				if(item != null){
+					data.push(item.toJson(new JsonWriterSettings(JsonMode.STRICT)))
+				}else{
+					break
+				}
+			}
+
+			if(cursor.getServerCursor() == null){
+				synchronized(ageLock){
 					cursors[cursorKey][1].close()
 					cursors.remove(cursorKey);
 					cursorId = 0;
+					lastClientUsage.remove(cursorKey)
 				}
-
-				render([nReturned: data.size(),
-						data: data,
-						resultFlags: 0,
-						cursorId: "NumberLong(\"" + cursorId + "\")"] as JSON)
-			}else{
-				render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
 			}
+
+			render([nReturned: data.size(),
+					data: data,
+					resultFlags: 0,
+							cursorId: "NumberLong(\"" + cursorId + "\")"] as JSON)
 		}catch(MongoCursorNotFoundException e){
 			render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
 		}
