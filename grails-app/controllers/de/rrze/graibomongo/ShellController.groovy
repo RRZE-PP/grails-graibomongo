@@ -146,14 +146,16 @@ class RequestMoreRequest implements grails.validation.Validateable {
 
 class ShellController {
 
-	final int SERVER_SELECT_TIMEOUT_MS = 1000;
-	final int CLIENT_EXPIRATION_S = 15
+	static final int SERVER_SELECT_TIMEOUT_MS = 1000;
+	static final int CLIENT_EXPIRATION_S = 3600
+	static final int MAX_CACHED_CLIENTS = 1000
+	static final float PRUNE_AT_PERCENTAGE = 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
 
 	static cursors = [:];
-	//TODO synchronize access
 	static SortedMap<Long, String> clientAge = new TreeMap<Long, String>()
 	static lastClientUsage = [:]
 	static Object ageLock = new Object()
+	static final int PRUNE_AT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
 
     def index(){
     	render "some text"
@@ -208,31 +210,37 @@ class ShellController {
 		println(request)
 
 		//prune expired clients
-		def expiredBefore = System.currentTimeMillis() - CLIENT_EXPIRATION_S * 1000
-		synchronized(ageLock){
-			println "Checking expiration"
-			def stillInUse = [:]
-			for(def cursorKey : clientAge.headMap(expiredBefore).values()){
-				print cursorKey
-				if(lastClientUsage.containsKey(cursorKey) && lastClientUsage[cursorKey] > expiredBefore){
-					//this client is old, but still in use
-					println " is still in use"
-					stillInUse[lastClientUsage[cursorKey]] = cursorKey
-					continue
+		if(cursors.size() > PRUNE_AT_COUNT){
+			println "Pruning threshold reached. Starting a prune run."
+			def expiredBefore = System.currentTimeMillis() - CLIENT_EXPIRATION_S * 1000
+			synchronized(ageLock){
+				def stillInUse = [:]
+				for(def cursorKey : clientAge.headMap(expiredBefore).values()){
+					print cursorKey
+					if(lastClientUsage.containsKey(cursorKey) && lastClientUsage[cursorKey] > expiredBefore){
+						//this client is old, but still in use
+						stillInUse[lastClientUsage[cursorKey]] = cursorKey
+						continue
+					}
+
+					if(!cursors.containsKey(cursorKey))
+						continue
+
+
+					cursors[cursorKey][0].close()
+					cursors[cursorKey][1].close()
+					cursors.remove(cursorKey)
 				}
 
-				if(!cursors.containsKey(cursorKey))
-					continue
-
-				println " is expired"
-
-				cursors[cursorKey][0].close()
-				cursors[cursorKey][1].close()
-				cursors.remove(cursorKey)
+				clientAge.headMap(expiredBefore).clear()
+				clientAge.putAll(stillInUse)
 			}
+		}
 
-			clientAge.headMap(expiredBefore).clear()
-			clientAge.putAll(stillInUse)
+		if(cursors.size() > MAX_CACHED_CLIENTS){
+			response.status = 500
+			render([error: "Maximum client number on server has been reached."] as JSON)
+			return
 		}
 
 		def conn = request.connection
