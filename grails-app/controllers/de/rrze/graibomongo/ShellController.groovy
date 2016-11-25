@@ -1,6 +1,7 @@
 package de.rrze.graibomongo
 
 import com.mongodb.MongoClient
+import com.mongodb.client.MongoCursor
 import com.mongodb.ServerAddress
 import com.mongodb.MongoCredential
 import com.mongodb.MongoClientOptions
@@ -16,6 +17,7 @@ import org.bson.BsonDocument
 import grails.converters.JSON
 
 import java.util.TreeMap
+import java.util.concurrent.atomic.AtomicInteger
 
 class ResultFlagType {
     /* returned, with zero results, when getMore is called but the cursor id
@@ -152,8 +154,13 @@ class ShellController {
 	static final float PRUNE_AT_PERCENTAGE = 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
 
 	static cursors = [:];
-	static SortedMap<Long, String> clientAge = new TreeMap<Long, String>()
-	static lastClientUsage = [:]
+	static clients = [:]
+	static SortedMap<Long, ArrayList<String>> cursorsCreatedPerSecond =
+				 new TreeMap<Long, ArrayList<String>>() //allows easy search for possibly too old cursors
+	static lastUsageOfCursor = [:]
+	static clientOfCursor = [:]
+	static openCursorsPerClient = [:]
+
 	static Object ageLock = new Object()
 	static final int PRUNE_AT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
 
@@ -176,14 +183,29 @@ class ShellController {
 		def conn = request.connection
 
 		try{
-			//TODO: check if a mongoclient could be reused (address + auth) and reuse it if possible
-			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
-			                                  conn.getAuthList(),
-			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
+			def serverAddress = new ServerAddress(conn.hostname, conn.port)
+			def mongoClientOptions = MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build()
+
+			def clientID = new Tuple(serverAddress, conn.getAuthList(), mongoClientOptions)
+
+			MongoClient mc = null
+			//TODO: one lock for clients, one lock for connections
+			synchronized(ageLock){
+				if(clients.containsKey(clientID)){
+					mc = clients[clientID]
+					openCursorsPerClient[mc].incrementAndGet()
+				}else{
+					mc = new MongoClient(serverAddress,
+		                                  conn.getAuthList(),
+		                                  mongoClientOptions);
+					clients[clientID] = mc
+					openCursorsPerClient[mc] = new AtomicInteger(1)
+				}
+			}
 
 			def result = mc.getDatabase(request.database).runCommand(BsonDocument.parse(request.command))
 
-			mc.close()
+			openCursorsPerClient[mc].decrementAndGet()
 
 			response.setContentType("application/json")
 			render result.toJson(new JsonWriterSettings(JsonMode.STRICT))
@@ -210,26 +232,46 @@ class ShellController {
 		println(request)
 
 		//prune expired clients
-		if(cursors.size() > PRUNE_AT_COUNT){
+		if(clients.size() > PRUNE_AT_COUNT){
 			println "Pruning threshold reached. Starting a prune run."
-			def expiredBefore = System.currentTimeMillis() - CLIENT_EXPIRATION_S * 1000
+			def expiredBefore = System.currentTimeMillis()/1000 - CLIENT_EXPIRATION_S
 			synchronized(ageLock){
 				def stillInUse = [:]
-				for(def cursorKey : clientAge.headMap(expiredBefore).values()){
-					print cursorKey
-					if(lastClientUsage.containsKey(cursorKey) && lastClientUsage[cursorKey] > expiredBefore){
-						//this client is old, but still in use
-						stillInUse[lastClientUsage[cursorKey]] = cursorKey
-						continue
+				for(def cursorsCreatedInThisSecond : cursorsCreatedPerSecond.headMap(expiredBefore).values()){
+					for(def cursorKey : cursorsCreatedInThisSecond){
+						def cursor = cursors[cursorKey]
+						if(lastUsageOfCursor[cursor] > expiredBefore){
+							//this cursor is old, but still in use
+							def lastUsage = lastClientUsage[cursor]
+
+							if(stillInUse[lastUsage] == null){
+								stillInUse[lastUsage] = new ArrayList<MongoCursor>()
+							}
+
+							stillInUse[lastUsage].add(cursorKey)
+							println " is still in use"
+							continue
+						}
+
+						if(!cursors.containsKey(cursorKey))
+							continue
+
+						println " can be removed"
+
+						cursor.close()
+
+						def client = clientOfCursor[cursor]
+						lastUsageOfCursor.remove(cursor)
+						clientOfCursor.remove(cursor)
+						openCursorsPerClient[client].decrementAndGet()
+						if(openCursorsPerClient[client].get() == 0){
+							client.close()
+							clients.remove[client]
+							openCursorsPerClient.remove(client)
+						}
+
+						cursors.remove(cursorKey)
 					}
-
-					if(!cursors.containsKey(cursorKey))
-						continue
-
-
-					cursors[cursorKey][0].close()
-					cursors[cursorKey][1].close()
-					cursors.remove(cursorKey)
 				}
 
 				clientAge.headMap(expiredBefore).clear()
@@ -237,7 +279,7 @@ class ShellController {
 			}
 		}
 
-		if(cursors.size() > MAX_CACHED_CLIENTS){
+		if(clients.size() > MAX_CACHED_CLIENTS){
 			response.status = 500
 			render([error: "Maximum client number on server has been reached."] as JSON)
 			return
@@ -246,10 +288,25 @@ class ShellController {
 		def conn = request.connection
 
 		try{
-			//TODO: check if a mongoclient could be reused (address + auth) and reuse it if possible
-			MongoClient mc = new MongoClient(new ServerAddress(conn.hostname, conn.port),
-			                                  conn.getAuthList(),
-			                                  MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build());
+			def serverAddress = new ServerAddress(conn.hostname, conn.port)
+			def mongoClientOptions = MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build()
+
+			def clientID = new Tuple(serverAddress, conn.getAuthList(), mongoClientOptions)
+
+			MongoClient mc = null
+			synchronized(ageLock){
+				if(clients.containsKey(clientID)){
+					mc = clients[clientID]
+					openCursorsPerClient[mc].incrementAndGet()
+				}else{
+					mc = new MongoClient(serverAddress,
+		                                  conn.getAuthList(),
+		                                  mongoClientOptions);
+					clients[clientID] = mc
+					openCursorsPerClient[mc] = new AtomicInteger(1)
+					println("Creating new client")
+				}
+			}
 
 			def database = request.ns.substring(0, request.ns.indexOf("."));
 			def collection = request.ns.substring(request.ns.indexOf(".")+1);
@@ -286,15 +343,24 @@ class ShellController {
 			if(!isFindOne && scursor != null){
 				cursorId = scursor?.getId()
 				def cursorKey = conn.hostname + conn.port + cursorId
+				def curTime = System.currentTimeMillis()/1000
 				synchronized(ageLock){
-					cursors[cursorKey] = [cursor, mc]
-					def curTime = System.currentTimeMillis()
-					while(clientAge.containsKey(curTime))//TODO: now there's at most 1000 connections/second :(
-						curTime = System.currentTimeMillis()
-					clientAge.put(curTime, cursorKey)
+					cursors[cursorKey] = cursor
+					clientOfCursor[cursor] = mc
+					lastUsageOfCursor[cursor] = curTime
+
+					if(!cursorsCreatedPerSecond.containsKey(curTime)){
+						//TODO: Maybe decrease the time resolution to 10s?
+						ArrayList<String> newList = new ArrayList<String>()
+						newList.add(cursorKey)
+						cursorsCreatedPerSecond.put(curTime, newList)
+					}else{
+						cursorsCreatedPerSecond.get(curTime).put(cursorKey)
+					}
 				}
 			}else{
-				mc.close()
+				cursor.close()
+				openCursorsPerClient[mc].decrementAndGet()
 			}
 
 			render([nReturned: data.size(),
@@ -336,8 +402,8 @@ class ShellController {
 			def cursor = null
 			synchronized(ageLock){
 				if(cursorKey in cursors){
-					cursor = cursors[cursorKey][0]
-					lastClientUsage[cursorKey] = System.currentTimeMillis()
+					cursor = cursors[cursorKey]
+					lastUsageOfCursor[cursor] = System.currentTimeMillis()/1000
 				}else{
 					render([resultFlags: ResultFlagType.ResultFlag_CursorNotFound] as JSON)
 					return
@@ -356,11 +422,13 @@ class ShellController {
 
 			if(cursor.getServerCursor() == null){
 				synchronized(ageLock){
-					cursors[cursorKey][1].close()
-					cursors.remove(cursorKey);
-					cursorId = 0;
-					lastClientUsage.remove(cursorKey)
+					cursors.remove(cursorKey)
+					lastUsageOfCursor.remove(cursor)
+					clientOfCursor[cursor].decrementAndGet()
+					clientOfCursor.remove(cursor)
 				}
+				cursor.close()
+				cursorId = 0
 			}
 
 			render([nReturned: data.size(),
