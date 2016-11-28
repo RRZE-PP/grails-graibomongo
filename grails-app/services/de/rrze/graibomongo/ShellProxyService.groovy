@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCursor
 import com.mongodb.ServerAddress
 import com.mongodb.MongoClientOptions
 import com.mongodb.MongoCredential
+import com.mongodb.MongoException
 import com.mongodb.MongoTimeoutException
 import com.mongodb.MongoCommandException
 import com.mongodb.MongoCursorNotFoundException
@@ -66,6 +67,8 @@ class ShellProxyService {
 			return new Tuple2(422, [error: 'Invalid command sent. Exception was: ' + e.getMessage()])
 		}catch(MongoTimeoutException e){
 			return new Tuple2(422, [error: 'Connection to the database timed out. Exception was: ' + e.getMessage()])
+		}catch(MongoException e){
+			return new Tuple2(422, [error: 'An unexpected error occured: ' + e.getMessage()])
 		}
 	}
 
@@ -142,6 +145,8 @@ class ShellProxyService {
 			return new Tuple2(422, [error: 'Invalid command sent. Exception was: ' + e.getMessage()])
 		}catch(MongoTimeoutException e){
 			return new Tuple2(422, [error: 'Connection to the database timed out. Exception was: ' + e.getMessage()])
+		}catch(MongoException e){
+			return new Tuple2(422, [error: 'An unexpected error occured: ' + e.getMessage()])
 		}
 	}
 
@@ -189,6 +194,8 @@ class ShellProxyService {
 								cursorId: "NumberLong(\"" + cursorId + "\")"])
 		}catch(MongoCursorNotFoundException e){
 			return new Tuple2(200, [resultFlags: ResultFlagType.ResultFlag_CursorNotFound])
+		}catch(MongoException e){
+			return new Tuple2(422, [error: 'An unexpected error occured: ' + e.getMessage()])
 		}
 	}
 
