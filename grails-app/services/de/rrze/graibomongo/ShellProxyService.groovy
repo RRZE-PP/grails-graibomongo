@@ -17,10 +17,13 @@ import java.util.TreeMap
 import java.util.concurrent.atomic.AtomicInteger
 
 class ShellProxyService {
-	private static final int CLIENT_EXPIRATION_S = 3600
-	private static final int SERVER_SELECT_TIMEOUT_MS = 1000
-	private static final int MAX_CACHED_CLIENTS = 1000
-	private static final float PRUNE_AT_PERCENTAGE = 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
+	private def configHolder = grails.util.Holders.grailsApplication.config
+	private static final int CLIENT_EXPIRATION_S = configHolder?.graibomongo?.clientExpiration ?: 8*60*60
+	private static final int CONNECT_TIMEOUT = configHolder?.graibomongo?.connectTimeout ?: 3000
+	private static final int SOCKET_TIMEOUT = configHolder?.graibomongo?.socketTimeout ?: 60000
+	private static final int SERVER_SELECT_TIMEOUT = configHolder?.graibomongo?.serverSelectionTimeout ?: CONNECT_TIMEOUT + 1000
+	private static final int MAX_CACHED_CLIENTS = configHolder?.graibomongo?.maxCachedClients ?: 1000
+	private static final float PRUNE_AT_PERCENTAGE = configHolder?.graibomongo?.pruneAtPercentage ?: 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
 
 	private static cursors = [:]
 	private static clients = [:]
@@ -47,7 +50,10 @@ class ShellProxyService {
 		try{
 			def mongoClient = getOrCreateClient(new ServerAddress(conn.hostname, conn.port),
 			                           conn.authList,
-			                           MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build())
+			                           MongoClientOptions.builder().connectTimeout(CONNECT_TIMEOUT)
+			                                                       .socketTimeout(SOCKET_TIMEOUT)
+			                                                       .serverSelectionTimeout(SERVER_SELECT_TIMEOUT)
+			                                                       .build())
 
 			def result = mongoClient.getDatabase(request.database).runCommand(BsonDocument.parse(request.command))
 
@@ -94,7 +100,10 @@ class ShellProxyService {
 
 			def mongoClient = getOrCreateClient(new ServerAddress(conn.hostname, conn.port),
 			                           conn.authList,
-			                           MongoClientOptions.builder().serverSelectionTimeout(SERVER_SELECT_TIMEOUT_MS).build())
+			                           MongoClientOptions.builder().connectTimeout(CONNECT_TIMEOUT)
+			                                                       .socketTimeout(SOCKET_TIMEOUT)
+			                                                       .serverSelectionTimeout(SERVER_SELECT_TIMEOUT)
+			                                                       .build())
 
 			def query = BsonDocument.parse(request.query)
 			def cursor = mongoClient.getDatabase(database).getCollection(collection)
