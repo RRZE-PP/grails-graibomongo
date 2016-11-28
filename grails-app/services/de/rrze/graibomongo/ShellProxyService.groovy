@@ -4,6 +4,7 @@ import com.mongodb.MongoClient
 import com.mongodb.client.MongoCursor
 import com.mongodb.ServerAddress
 import com.mongodb.MongoClientOptions
+import com.mongodb.MongoCredential
 import com.mongodb.MongoTimeoutException
 import com.mongodb.MongoCommandException
 import com.mongodb.MongoCursorNotFoundException
@@ -17,7 +18,7 @@ import java.util.TreeMap
 import java.util.concurrent.atomic.AtomicInteger
 
 class ShellProxyService {
-	private def configHolder = grails.util.Holders.grailsApplication.config
+	private static def configHolder = grails.util.Holders.grailsApplication.config
 	private static final int CLIENT_EXPIRATION_S = configHolder?.graibomongo?.clientExpiration ?: 8*60*60
 	private static final int CONNECT_TIMEOUT = configHolder?.graibomongo?.connectTimeout ?: 3000
 	private static final int SOCKET_TIMEOUT = configHolder?.graibomongo?.socketTimeout ?: 60000
