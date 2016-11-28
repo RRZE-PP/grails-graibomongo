@@ -33,6 +33,14 @@ class ShellProxyService {
 	private static Object ageLock = new Object()
 	private static final int PRUNE_AT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
 
+	/**
+	 * Executes a command on the database.
+	 *
+	 * @param request - the information about the connection and the requested command
+	 * @return a {@code Tuple2<int, org.bson.Document>} in case of success and a {@code Tuple2<int, LinkedHashMap>}
+	 * in case of an error with the first value a suggested HTTP status code and the second the result or error message
+	 * which can be sent as JSON to a mongobrowser instance
+	 */
 	def executeCommand(CommandRequest request){
 		def conn = request.connection
 
@@ -54,6 +62,13 @@ class ShellProxyService {
 		}
 	}
 
+	/**
+	 * Initiates a new cursor by executing a query on the database
+	 *
+	 * @param request - the information about the connection and the requested query
+	 * @return a {@code Tuple2<int, LinkedHashMap>} with the first value a suggested HTTP status code
+	 * and the second the result or error message as understandable by a mongobrowser instance
+	 */
 	def initiateNewCursor(CursorInitRequest request){
 		pruneClientCache()
 
@@ -120,6 +135,14 @@ class ShellProxyService {
 		}
 	}
 
+
+	/**
+	 * Initiates a new cursor by executing a query on the database
+	 *
+	 * @param request - the information about the connection and the requested query
+	 * @return a {@code Tuple2<int, LinkedHashMap>} with the first value a suggested HTTP status code
+	 * and the second the result or error message as understandable by a mongobrowser instance
+	 */
 	def getMoreFromCursor(RequestMoreRequest request){
 		def conn = request.connection
 		def cursorId = request.cursorId
@@ -159,6 +182,9 @@ class ShellProxyService {
 		}
 	}
 
+	/**
+	 * Removes expired clients and cursors from the cache if a certain threshold has been reached
+	 */
 	private def pruneClientCache(){
 		if(clients.size() > PRUNE_AT_COUNT){
 			println "Pruning threshold reached. Starting a prune run."
@@ -211,7 +237,17 @@ class ShellProxyService {
 		}
 	}
 
-	private def getOrCreateClient(serverAddress, authenticationList, mongoClientOptions){
+	/**
+	 * Creates a new client or gets an applicable one from the cache.
+	 * A client is applicable if it is connected to the same address, uses the same authentication and
+	 * the same client options.
+	 *
+	 * @param serverAdress the address to connect to
+	 * @param authenticationList the (possibly empty) list of authentication credentials
+	 * @param mongoClientOptions the options to set on the client
+	 * @return the {@code MongoClient} instance created or loaded from cache
+	 */
+	private def getOrCreateClient(ServerAddress serverAddress, List<MongoCredential> authenticationList, MongoClientOptions mongoClientOptions){
 		def clientID = new Tuple(serverAddress, authenticationList, mongoClientOptions)
 
 		MongoClient mongoClient = null
@@ -231,11 +267,23 @@ class ShellProxyService {
 		return mongoClient
 	}
 
-	private def doneWithClient(mongoClient){
+	/**
+	 * Indicates a connection no longer intents to use its cursor on the client
+	 *
+	 * @param mongoClient the client whose cursor is no longer in use
+	 */
+	private def doneWithClient(MongoClient mongoClient){
 		openCursorsPerClient[mongoClient].decrementAndGet()
 	}
 
-	private def storeCursor(connection, mongoClient, cursor){
+	/**
+	 * Store a cursor (and the client it's opened from) in the cache
+	 *
+	 * @param connection the connection to which this client and cursor belong
+	 * @param mongoClient the client to store
+	 * @param cursor the cursor to store
+	 */
+	private def storeCursor(ConnectionData connection, MongoClient mongoClient, MongoCursor cursor){
 		def cursorKey = connection.hostname + connection.port + cursor.getServerCursor().getId()
 		def curTime = System.currentTimeMillis()/1000
 
@@ -255,7 +303,15 @@ class ShellProxyService {
 		}
 	}
 
-	private def loadCursor(connection, cursorId){
+	/**
+	 * Load a cursor from the cache. If the cursor is depleted after loading it, this should be indicated by
+	 * calling {@code doneWithLoadedCursor}.
+	 *
+	 * @param connection the connection to which the cursor belongs
+	 * @param cursorId the Id of the cursor to load
+	 * @return the {@code MongoCursor} loaded or null if there was no applicable cursor for this connection and id
+	 */
+	private def loadCursor(ConnectionData connection, long cursorId){
 		def cursorKey = connection.hostname + connection.port + cursorId
 
 		synchronized(ageLock){
@@ -269,7 +325,14 @@ class ShellProxyService {
 		}
 	}
 
-	private def doneWithLoadedCursor(connection, cursor){
+	/**
+	 * Indicates a connection no longer needs a cursor it has previously loaded from cache. It is removed
+	 * immediately from the cache (it's client is kept until it expires).
+	 *
+	 * @param connection the connection to which the cursor belongs
+	 * @param cursor the cursor which is obsolete
+	 */
+	private def doneWithLoadedCursor(ConnectionData connection, MongoCursor cursor){
 		def cursorKey = connection.hostname + connection.port + cursor.getServerCursor().getId()
 
 		synchronized(ageLock){
