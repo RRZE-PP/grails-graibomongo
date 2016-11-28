@@ -1,3 +1,5 @@
+package de.rrze.graibomongo
+
 class ConnectionPreset {
 	String name;
 	String host;
