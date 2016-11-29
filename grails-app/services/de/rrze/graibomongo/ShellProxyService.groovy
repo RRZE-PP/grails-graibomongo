@@ -51,7 +51,7 @@ class ShellProxyService {
 
 		try{
 			def mongoClient = getOrCreateClient(new ServerAddress(conn.hostname, conn.port),
-			                           conn.authList,
+			                           conn.createAuthList(),
 			                           MongoClientOptions.builder().connectTimeout(CONNECT_TIMEOUT)
 			                                                       .socketTimeout(SOCKET_TIMEOUT)
 			                                                       .serverSelectionTimeout(SERVER_SELECT_TIMEOUT)
@@ -103,7 +103,7 @@ class ShellProxyService {
 			def collection = request.ns.substring(request.ns.indexOf(".")+1)
 
 			def mongoClient = getOrCreateClient(new ServerAddress(conn.hostname, conn.port),
-			                           conn.authList,
+			                           conn.createAuthList(),
 			                           MongoClientOptions.builder().connectTimeout(CONNECT_TIMEOUT)
 			                                                       .socketTimeout(SOCKET_TIMEOUT)
 			                                                       .serverSelectionTimeout(SERVER_SELECT_TIMEOUT)

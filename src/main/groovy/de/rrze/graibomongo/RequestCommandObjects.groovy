@@ -20,16 +20,24 @@ class ResultFlagType {
     static ResultFlag_AwaitCapable = 8
 }
 
-class AuthData  implements grails.validation.Validateable {
+class AuthData implements grails.validation.Validateable {
 	String user
 	String password
 
 	String authDatabase
 	String authMechanism
 
+	def beforeValidate() {
+		println("VALIDATION OF AUTHDATA")
+		authDatabase = authDatabase ?: "admin"
+		authMechanism = authMechanism ?: "scram-sha-1"
+	}
+
 	static constraints = {
-		authDatabase(nullable: true)
-		authMechanism(nullable: true)
+		user nullable: false, blank: false
+		password nullable: false, blank: false
+		authDatabase nullable: false, blank: false
+		authMechanism nullable: false, inList: ["scram-sha-1", "mongodb-cr"]
 	}
 
 }
@@ -41,7 +49,7 @@ class ConnectionData implements grails.validation.Validateable {
 	Boolean performAuth
 	AuthData auth
 
-	List<MongoCredential> getAuthList(){
+	List<MongoCredential> createAuthList(){
 		if(performAuth != true)
 			return new ArrayList<MongoCredential>()
 
@@ -61,17 +69,19 @@ class ConnectionData implements grails.validation.Validateable {
 		return credentials
 	}
 
-    def beforeValidate() {
-        hostname = hostname ?: '127.0.0.1'
-        port = port ?: 27017
-    }
+	def beforeValidate() {
+		port = port ?: 27017
+	}
 
 	String toString(){
 		return auth?.user + ":" + auth?.password + "@" + hostname + ":" + port
 	}
 
 	static constraints = {
-		auth(nullable:true)
+		hostname nullable: false, blank: false
+		port nullable: false, blank: false
+		performAuth nullable: false, blank: false
+		auth nullable: false, blank: false, validator: {val, obj -> obj.performAuth ? val.validate() : true }
 	}
 }
 
@@ -83,6 +93,12 @@ class CommandRequest implements grails.validation.Validateable {
 
 	String toString(){
 		return "DB[" + database + "].runCommand(" + command + ")"
+	}
+
+	static constraints = {
+		connection nullable: false, blank: false, validator: {val, obj -> val.validate()}
+		database nullable: false, blank: false
+		command nullable: false, blank: false
 	}
 }
 
@@ -102,6 +118,14 @@ class CursorInitRequest implements grails.validation.Validateable {
 
 	String toString(){
 		return ns + ".find(" + query + ", " + fieldsToReturn +").get(" + nToReturn + ")"
+	}
+
+	static constraints = {
+		connection nullable: false, blank: false, validator: {val, obj -> val.validate()}
+		query nullable: false, blank: false
+		ns nullable: false, blank: false
+		nToReturn nullable: false, blank: false
+		fieldsToReturn nullable: false, blank: false
 	}
 }
 
@@ -126,5 +150,11 @@ class RequestMoreRequest implements grails.validation.Validateable {
 
 	String toString(){
 		return "Cursor(" + getCursorId() + ").get(" + nToReturn + ")"
+	}
+
+	static constraints = {
+		connection nullable: false, blank: false, validator: {val, obj -> val.validate()}
+		cursorId nullable: false, blank: false
+		nToReturn nullable: false, blank: false
 	}
 }
