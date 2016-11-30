@@ -18,6 +18,8 @@ import org.bson.BsonDocument
 import java.util.TreeMap
 import java.util.concurrent.atomic.AtomicInteger
 
+class CacheFullException extends Exception {}
+
 class ShellProxyService {
 	private static def configHolder = grails.util.Holders.grailsApplication.config
 	private static final int CLIENT_EXPIRATION_S = configHolder?.graibomongo?.clientExpiration ?: 8*60*60
@@ -25,6 +27,7 @@ class ShellProxyService {
 	private static final int SOCKET_TIMEOUT = configHolder?.graibomongo?.socketTimeout ?: 60000
 	private static final int SERVER_SELECT_TIMEOUT = configHolder?.graibomongo?.serverSelectionTimeout ?: CONNECT_TIMEOUT + 1000
 	private static final int MAX_CACHED_CLIENTS = configHolder?.graibomongo?.maxCachedClients ?: 1000
+	private static final int MAX_CACHED_CURSORS = configHolder?.graibomongo?.maxCachedCursors ?: MAX_CACHED_CLIENTS * 500
 	private static final float PRUNE_AT_PERCENTAGE = configHolder?.graibomongo?.pruneAtPercentage ?: 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
 
 	private static cursors = [:]
@@ -36,7 +39,8 @@ class ShellProxyService {
 	private static openCursorsPerClient = [:]
 
 	private static Object ageLock = new Object()
-	private static final int PRUNE_AT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
+	private static final int PRUNE_AT_CLIENT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
+	private static final int PRUNE_AT_CURSOR_COUNT = MAX_CACHED_CURSORS * PRUNE_AT_PERCENTAGE / 100
 
 	/**
 	 * Executes a command on the database.
@@ -47,6 +51,8 @@ class ShellProxyService {
 	 * which can be sent as JSON to a mongobrowser instance
 	 */
 	def executeCommand(CommandRequest request){
+		pruneClientCache()
+
 		def conn = request.connection
 
 		try{
@@ -62,7 +68,8 @@ class ShellProxyService {
 			doneWithClient(mongoClient)
 
 			return new Tuple2(200, result)
-
+		}catch(CacheFullException e){
+			return new Tuple2(500, [error: 'Maximum client number on server has been reached.'])
 		}catch(IllegalArgumentException | MongoCommandException e){
 			return new Tuple2(422, [error: 'Invalid command sent. Exception was: ' + e.getMessage()])
 		}catch(MongoTimeoutException e){
@@ -82,8 +89,8 @@ class ShellProxyService {
 	def initiateNewCursor(CursorInitRequest request){
 		pruneClientCache()
 
-		if(clients.size() > MAX_CACHED_CLIENTS){
-			return new Tuple2(500, [error: "Maximum client number on server has been reached."])
+		if(cursors.size() >= MAX_CACHED_CURSORS){
+			return new Tuple2(500, [error: 'Maximum cursor number on server has been reached.'])
 		}
 
 		def conn = request.connection
@@ -141,6 +148,8 @@ class ShellProxyService {
 								resultFlags: 0,
 								cursorId: "NumberLong(\"" + cursorId + "\")"])
 
+		}catch(CacheFullException e){
+			return new Tuple2(500, [error: 'Maximum client number on server has been reached.'])
 		}catch(IndexOutOfBoundsException | IllegalArgumentException | MongoQueryException e){
 			return new Tuple2(422, [error: 'Invalid command sent. Exception was: ' + e.getMessage()])
 		}catch(MongoTimeoutException e){
@@ -203,7 +212,7 @@ class ShellProxyService {
 	 * Removes expired clients and cursors from the cache if a certain threshold has been reached
 	 */
 	private def pruneClientCache(){
-		if(clients.size() > PRUNE_AT_COUNT){
+		if(clients.size() > PRUNE_AT_CLIENT_COUNT || cursors.size() > PRUNE_AT_CURSOR_COUNT){
 			println "Pruning threshold reached. Starting a prune run."
 			def expiredBefore = System.currentTimeMillis()/1000 - CLIENT_EXPIRATION_S
 
@@ -238,19 +247,28 @@ class ShellProxyService {
 						lastUsageOfCursor.remove(cursor)
 						clientOfCursor.remove(cursor)
 						openCursorsPerClient[client].decrementAndGet()
-						if(openCursorsPerClient[client].get() == 0){
-							client.close()
-							clients.remove[client]
-							openCursorsPerClient.remove(client)
-						}
-
 						cursors.remove(cursorKey)
 					}
 				}
 
-				clientAge.headMap(expiredBefore).clear()
-				clientAge.putAll(stillInUse)
-			}
+				cursorsCreatedPerSecond.headMap(expiredBefore).clear()
+				cursorsCreatedPerSecond.putAll(stillInUse)
+
+				//Now remove all old clients who have never had a cursor created or whose cursors we have removed
+				def removeClients = []
+				for(client in clients.values()){
+					if(openCursorsPerClient[client].get() == 0){
+						log.debug("No cursor uses this client.")
+						client.close()
+						removeClients.add(client)
+						openCursorsPerClient.remove(client)
+					}
+				}
+				for(client in removeClients){
+					clients.values().remove(client) //This could be done more efficiently
+				}
+
+			}// synchronized
 		}
 	}
 
@@ -264,7 +282,9 @@ class ShellProxyService {
 	 * @param mongoClientOptions the options to set on the client
 	 * @return the {@code MongoClient} instance created or loaded from cache
 	 */
-	private def getOrCreateClient(ServerAddress serverAddress, List<MongoCredential> authenticationList, MongoClientOptions mongoClientOptions){
+	private def getOrCreateClient(ServerAddress serverAddress,
+	                              List<MongoCredential> authenticationList,
+	                              MongoClientOptions mongoClientOptions) throws CacheFullException {
 		def clientID = new Tuple(serverAddress, authenticationList, mongoClientOptions)
 
 		MongoClient mongoClient = null
@@ -273,6 +293,9 @@ class ShellProxyService {
 				mongoClient = clients[clientID]
 				openCursorsPerClient[mongoClient].incrementAndGet()
 			}else{
+				if(clients.size() >= MAX_CACHED_CLIENTS)
+					throw new CacheFullException()
+
 				mongoClient = new MongoClient(serverAddress,
 	                                  authenticationList,
 	                                  mongoClientOptions)
