@@ -28,7 +28,6 @@ class AuthData implements grails.validation.Validateable {
 	String authMechanism
 
 	def beforeValidate() {
-		println("VALIDATION OF AUTHDATA")
 		authDatabase = authDatabase ?: "admin"
 		authMechanism = authMechanism ?: "scram-sha-1"
 	}

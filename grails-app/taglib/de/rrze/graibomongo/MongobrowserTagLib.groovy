@@ -11,7 +11,7 @@ class CmeditorTagLib {
 			for(name in defaultConnections.keySet()){
 				def conn = defaultConnections[name]
 				if(!(conn.host && (!conn.auth || (conn.auth.username && conn.auth.password)))){
-					println("Not all necesarry data was given for default preset: " + name)
+					log.warn("Not all necesarry data was given for default preset: " + name + "(host missing or incomplete auth)")
 					continue
 				}
 

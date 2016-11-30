@@ -213,7 +213,11 @@ class ShellProxyService {
 	 */
 	private def pruneClientCache(){
 		if(clients.size() > PRUNE_AT_CLIENT_COUNT || cursors.size() > PRUNE_AT_CURSOR_COUNT){
-			println "Pruning threshold reached. Starting a prune run."
+			log.info("Pruning threshold reached (" + cursors.size() + " > " + PRUNE_AT_CURSOR_COUNT +
+			         " of max " + MAX_CACHED_CURSORS + " cursors or " + clients.size() + " > " + PRUNE_AT_CLIENT_COUNT +
+			         " of max " + MAX_CACHED_CLIENTS + " clients).")
+			def oldCursorCount = cursors.size()
+			def oldClientCount = clients.size()
 			def expiredBefore = System.currentTimeMillis()/1000 - CLIENT_EXPIRATION_S
 
 			synchronized(ageLock){
@@ -232,14 +236,14 @@ class ShellProxyService {
 							}
 
 							stillInUse[lastUsage].add(cursorKey)
-							println " is still in use"
+							log.debug("Cursor " + cursorKey + " is still in use")
 							continue
 						}
 
 						if(!cursors.containsKey(cursorKey))
 							continue
 
-						println " can be removed"
+						log.debug("Cursor " + cursorKey + " can be removed")
 
 						cursor.close()
 
@@ -269,6 +273,9 @@ class ShellProxyService {
 				}
 
 			}// synchronized
+
+			log.info("Removed " + (oldCursorCount - cursors.size()) +
+				     " cursors and " + (oldClientCount - clients.size()) + " clients.")
 		}
 	}
 
@@ -301,6 +308,7 @@ class ShellProxyService {
 	                                  mongoClientOptions)
 				clients[clientID] = mongoClient
 				openCursorsPerClient[mongoClient] = new AtomicInteger(1)
+				log.debug("New client created, caching " + clients.size() + " clients")
 			}
 		}
 
@@ -341,6 +349,7 @@ class ShellProxyService {
 				cursorsCreatedPerSecond.get(curTime).put(cursorKey)
 			}
 		}
+		log.debug("New cursor stored, caching " + cursors.size() + " cursors")
 	}
 
 	/**

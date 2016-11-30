@@ -15,16 +15,16 @@ class ShellController {
     }
 
 	def runCommand(CommandRequest request){
-		println "=== RunCommand ==="
+		log.info("Command request received.")
 		if(request.hasErrors()){
-			println "   Error"
-			print "    "; println request
-			print "    "; println request?.connection
+			log.warn("Request was irregular.")
+			log.debug("Request: " + request)
+			log.debug("Connection: " + request?.connection)
+
 			response.status = 422
 			render([error: 'Invalid command sent'] as JSON)
 			return
 		}
-		println(request)
 
 		def result = shellProxyService.executeCommand(request)
 
@@ -39,16 +39,16 @@ class ShellController {
 	}
 
 	def initCursor(CursorInitRequest request){
-		println "=== InitCursor ==="
+		log.info("Cursor initiation request received.")
 		if(request.hasErrors()){
-			println "   Error"
-			print "    "; println request
-			print "    "; println request?.connection
+			log.warn("Request was irregular.")
+			log.debug("Request: " + request)
+			log.debug("Connection: " + request?.connection)
+
 			response.status = 422
 			render([error: 'Invalid command sent'] as JSON)
 			return
 		}
-		println(request)
 
 		def result = shellProxyService.initiateNewCursor(request)
 
@@ -57,16 +57,16 @@ class ShellController {
 	}
 
 	def requestMore(RequestMoreRequest request){
-		println "=== RequestMore ==="
+		log.info("Cursor request more request received.")
 		if(request.hasErrors()){
-			println "   Error"
-			print "    "; println request
-			print "    "; println request?.connection
+			log.warn("Request was irregular.")
+			log.debug("Request: " + request)
+			log.debug("Connection: " + request?.connection)
+
 			response.status = 422
 			render([error: 'Invalid command sent'] as JSON)
 			return
 		}
-		println(request)
 
 		def result = shellProxyService.getMoreFromCursor(request)
 
