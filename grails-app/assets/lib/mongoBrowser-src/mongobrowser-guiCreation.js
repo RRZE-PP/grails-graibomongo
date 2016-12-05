@@ -59,16 +59,20 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					presets = self.state.connectionPresets;
 
 				var table = this.find(".connectionsTable tbody");
+				var oldId = table.children(".current").attr("data-connectionIndex");
 				table.children().remove();
 				for (var i=0; i<presets.length; i++) {
 					var p = presets[i];
 
-					var newLine = $("<tr data-connectionIndex='"+i+"'><td>"+p.name+"</td><td>"+p.host+":"+p.port+"</td><td> </td></tr>");
-					newLine.on("dblclick", (function(p){
+					var newLine = $("<tr data-connectionIndex='"+i+"'><td>"+p.name+"</td> " +
+						             "<td>"+p.host+":"+p.port+"</td><td>" +
+						             (p.performAuth ? p.auth.adminDatabase + " / " + p.auth.username : "- - -" ) + "</td></tr>");
+					newLine.on("dblclick", (function(newLine){
 						return function(){
-							self.connect(p.host, p.port, "test");
-							self.uiElements.dialogs.connectionManager.dialog("close")}
-						})(p));
+							newLine.click();
+							if(connectCurrentConnectionPreset())
+								self.uiElements.dialogs.connectionManager.dialog("close");
+						}})(newLine));
 					newLine.on("click", function(){table.children().removeClass("current"); $(this).addClass("current")});
 
 					table.append(newLine);
@@ -77,6 +81,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				if(presets.length < 3)
 					for (var i=0; i< 3 - presets.length; i++)
 						table.append($("<tr class='whitespace'><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>"));
+				if(oldId)
+					table.children().eq(oldId).click()
 			}
 
 			function editCurrentConnectionPreset(){
@@ -92,7 +98,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					if(curLine.size() === 0)
 						return;
 					var idx = parseInt(curLine.attr("data-connectionIndex"));
-					var cloned = $.extend({}, self.state.connectionPresets[idx]);
+					var cloned = $.extend(true, {}, self.state.connectionPresets[idx]);
 					cloned.name = "Copy of " + cloned.name;
 					openDialog(self, "connectionSettings", cloned);
 			}
@@ -112,8 +118,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						return;
 					var idx = parseInt(curLine.attr("data-connectionIndex"));
 					var preset= self.state.connectionPresets[idx];
-					self.connect(preset.host, preset.port, "test", //todo put correct database here
-						preset.performAuth, preset.auth.adminDatabase, preset.auth.username, preset.auth.password, preset.auth.method);
+					return self.connect(preset.host, preset.port, "test", //todo put correct database here
+						preset.performAuth, preset.auth.adminDatabase, preset.auth.username, preset.auth.password, preset.auth.method)
+
 			}
 
 			/**
@@ -169,7 +176,14 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				var host = self.uiElements.dialogs.connectionSettings.find(".connectionHost").val();
 				var port = parseInt(self.uiElements.dialogs.connectionSettings.find(".connectionPort").val());
 
-				self.state.connectionPresets.push({name:name, host:host, port:port});
+				var adminDatabase = curDialog.find("[name=adminDatabase]").val();
+				var username = curDialog.find("[name=username]").val();
+				var password = curDialog.find("[name=password]").val();
+				var method = curDialog.find("[name=method]").val();
+				var performAuth = curDialog.find("[name=performAuth]").prop("checked");
+
+				self.state.connectionPresets.push({name:name, host:host, port:port, performAuth: performAuth,
+						auth: {adminDatabase: adminDatabase, username: username, password: password, method: method}});
 				self.uiElements.dialogs.connectionManager.initialise();
 			}
 
@@ -260,7 +274,21 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						return;
 					}
 					try{
-						db.getCollection(collection).update({"_id": doc._id}, newObj);
+						var writeResult = db.getCollection(collection).update({"_id": doc._id}, newObj);
+
+						if(writeResult.nModified !== 1){
+							throw("Server claims " + writeResult.nModified + " elements were modified.");
+						}
+
+						var oldResultsView = getCurrentTab(self).state.displayedResult;
+						for(var i = 0; i < oldResultsView.length; i++){
+							if(oldResultsView[i]._id === doc._id){
+								oldResultsView[i] = newObj;
+								getCurrentTab(self).updateView();
+								getCurrentTab(self).uiElements.resultsTable.find("[data-indent=0]").eq(i).dblclick();
+								break;
+							}
+						}
 					}catch(e){
 						openDialog(self, "showMessage", "Could not insert document", e.toString(), "error");
 						return;
@@ -420,7 +448,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						},
 						{text: "Connect",
 						icons: {primary: "connectIcon"},
-						click: function(){connectCurrentConnectionPreset(); $(this).dialog("close");}}
+						click: function(){if(connectCurrentConnectionPreset()) $(this).dialog("close");}}
 					],
 					modal: true,
 					width: 'auto'
@@ -643,10 +671,23 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			}
 
 			sideBar.delegate(".foldIcon", "click", function(evt){toggleCollapsed(evt.target.parentNode)});
-			sideBar.delegate("li", "click", function(evt){
+			sideBar.delegate("li, li > span, li > div", "click contextmenu", function(evt){
 				sideBar.find(".current").removeClass("current");
 				$(evt.target).closest("li").addClass("current");})
 			sideBar.parent().resizable({handles: "e", minWidth: 120});
+
+			sideBar.contextMenu({
+					className: "mongoBrowser",
+					selector: ".server > span, .server > div",
+					items: {
+						close: {
+							name: "Close this connection",
+							callback: function(){
+								self.closeConnection(self.rootElement.find(".server").index($(this).parent()))
+							}
+						}
+					}
+				})
 		}
 
 		/**
@@ -753,11 +794,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						            }},
 						"sep2": "---------",
 						copyJSON:  {name: "Copy JSON",
-						            //callback: copyJSONAndValue,
+						            callback: copyJSONAndValue,
 						            disabled: function(){return !$(this).hasClass("hasChildren")},
 						            },
 						copyValue: {name: "Copy Value",
-						            //callback: copyJSONAndValue,
+						            callback: copyJSONAndValue,
 						            disabled: function(){return $(this).hasClass("hasChildren")},
 						           },
 						delete:    {name: "Delete Document...",
@@ -778,7 +819,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					obj = obj[keyList[i]];
 				}
 
-				var elem = $("<p>").attr("data-clipboard-text", JSON.stringify(obj));
+				var elem = $("<p>").attr("data-clipboard-text", MongoNS.tojson(obj));
 
 				var c = new Clipboard(elem[0]);
 				elem.click(); c.destroy(); elem.remove(); //well that was quick :/
@@ -801,12 +842,60 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			}
 		}
 
+		function createMenuBar(self){
+			var bar = self.uiElements.menuBar = self.rootElement.find(".menuBar");
+
+			function openMenu(rootItem){
+				bar.not(rootItem).find(".ui-menu").hide();
+				bar.find(".active").removeClass("active");
+
+				rootItem.find(".ui-menu").toggle();
+				rootItem.addClass("active");
+			}
+
+			var menuCallbacks = {
+				openConnection: function() { openDialog(self, "connectionManager");},
+				windowMode: function() { if(!$(this).find("input").prop("checked"))
+												self.option("window", "moveable");
+											else
+												self.option("window", "resizable");
+										},
+				expandFirstDoc: function() { self.option("expandFirstDoc", !$(this).find("input").prop("checked"));},
+				autoExecuteCode: function() { self.option("autoExecuteCode", !$(this).find("input").prop("checked"));},
+				about: function() {openDialog(self, "showMessage", "About", "MongoBrowser was based on Robomongo. However we are not affiliated with them. If you like this application, try the full blown desktop app!");}
+			}
+
+			bar.find(".menuRootElem > ul").menu();
+			bar.find(".menuRootElem").on("click", function(event){
+				var elem = $(event.currentTarget);
+				openMenu(elem);
+			});
+			bar.find(".menuRootElem").on("mouseenter", function(){
+				if(bar.find(".active").size() > 0){
+					var elem = $(event.currentTarget);
+					openMenu(elem);
+				}
+			});
+			bar.on("mouseleave", function(event){
+				bar.find(".ui-menu").hide();
+				bar.find(".active").removeClass("active");
+			});
+
+			bar.find("li").on("click", function(event){
+				if(typeof menuCallbacks[this.getAttribute("data-callback")] === "function"){
+					menuCallbacks[this.getAttribute("data-callback")].call(this, event);
+					return false;
+				}
+			});
+		}
+
 		return {
 			createRootElement: createRootElement,
 			createDialogs: createDialogs,
 			createTabEnvironment: createTabEnvironment,
 			createActionBarButtons: createActionBarButtons,
-			createSidebarEnvironment: createSidebarEnvironment
+			createSidebarEnvironment: createSidebarEnvironment,
+			createMenuBar: createMenuBar
 		}
 	}
 

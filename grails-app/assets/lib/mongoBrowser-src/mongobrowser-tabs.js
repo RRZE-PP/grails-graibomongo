@@ -121,7 +121,6 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		var startTime = $.now();
 
-		//TODO: this fails if we yield the js thread (e.g. in an asynchronous ajax call?) before finishing MongoNS.execute and resetting the print fct
 		var printedLines = []
 		var oldPrint = MongoNS.__namespacedPrint;
 		MongoNS.__namespacedPrint = function(line){
@@ -142,7 +141,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				this.uiElements.info.database.text(ret._db._name);
 				this.uiElements.info.collection.text(ret._collection._shortName);
 				this.uiElements.info.collection.parent().show();
-				ret = ret._exec()
+				ret = ret._exec();
 			}else{
 				this.uiElements.info.collection.parent().hide();
 			}
@@ -156,50 +155,52 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			MongoNS.__namespacedPrint(e.toString());
 		}
 
-		var duration = $.now() - startTime;
-		this.uiElements.info.time.text(duration/1000);
+		printExecutionResult(startTime, ret);
 
-		this.uiElements.printContainer.hide()
-		this.uiElements.resultsTable.hide();
-		this.uiElements.printedLines.text("");
-		this.uiElements.results.children().remove();
-		this.uiElements.iterate.start.val(0);
 
-		if(typeof ret !== "undefined" && ret !== null && typeof ret.__magicNoPrint === "undefined"){
-			this.uiElements.resultsTable.show();
+		function printExecutionResult(startTime, result){
+			var duration = $.now() - startTime;
+			self.uiElements.info.time.text(duration/1000);
 
-			if(ret instanceof MongoNS.Cursor){
-				printBatch(this, ret, parseInt(self.uiElements.iterate.max.val()));
-			}else{
-				this.state.displayedResult = [ret];
-				printLine(this, "", "(" + 1 + ")", ret, 0).attr("data-index", 0);
+			self.uiElements.printContainer.hide()
+			self.uiElements.resultsTable.hide();
+			self.uiElements.printedLines.text("");
+			self.uiElements.results.children().remove();
+			self.uiElements.iterate.start.val(0);
+
+			if(typeof result !== "undefined" && result !== null && typeof result.__magicNoPrint === "undefined"){
+				self.uiElements.resultsTable.show();
+
+				if(result instanceof MongoNS.Cursor){
+					printBatch(self, result, parseInt(self.uiElements.iterate.max.val()));
+				}else if(result instanceof MongoNS.DBCommandCursor){
+					printBatch(self, result, result.objsLeftInBatch());
+				}else{
+					self.state.displayedResult = [result];
+					printLine(self, "", "(" + 1 + ")", result, 0).attr("data-index", 0);
+				}
+				if(self.options.expandFirstDoc)
+					self.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
+				self.uiElements.results.children("[data-indent]").each(function(index, elem){
+					$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
+				});
+
+			}else if(printedLines.length === 0){
+				printedLines.push("Script executed successfully but there is no output to display.")
 			}
-			this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
-			this.uiElements.results.children("[data-indent]").each(function(index, elem){
-				$(elem).children().eq(0).css("padding-left", parseInt($(elem).attr("data-indent"))*25+"px");
-			});
 
-		}else if(printedLines.length === 0){
-			printedLines.push("Script executed successfully but there is no output to display.")
-		}
-
-		if(printedLines.length !== 0){
-			this.uiElements.printContainer.show();
-
-			var text = "";
-			for(var i=0; i < printedLines.length; i++){
-				text += printedLines[i] + "\n";
+			if(printedLines.length !== 0){
+				printText(self, printedLines);
 			}
-			self.uiElements.printedLines.text(text);
+
+			self.uiElements.resultsTable.find("th").css("width", "");
+			self.uiElements.resultsTable.resizableColumns("destroy");
+			self.uiElements.resultsTable.prev(".resizableColumnsFix").remove();
+			self.uiElements.resultsTable.resizableColumns({minWidth: 15});
+			self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
+
+			self.setTitle(self.state.codeMirror.getDoc().getValue());
 		}
-
-		self.uiElements.resultsTable.find("th").css("width", "");
-		self.uiElements.resultsTable.resizableColumns("destroy");
-		self.uiElements.resultsTable.prev(".resizableColumnsFix").remove();
-		self.uiElements.resultsTable.resizableColumns({minWidth: 15});
-		self.uiElements.resultsTable.prev().wrap($("<div class='resizableColumnsFix' style='width:0px;'></div>"))
-
-		self.setTitle(this.state.codeMirror.getDoc().getValue());
 	}
 
 	/**
@@ -213,16 +214,20 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		self.uiElements.results.children().remove();
 
 		self.state.displayedResult = [];
-		for(var i=0; i < count && cursor.more(); i++){
-			var val = cursor.next();
-			self.state.displayedResult.push(val);
-			var displayedKey = "(" + (i + 1) + ")";
-			if(val._id instanceof MongoNS.ObjectId)
-				displayedKey += " " + val._id.toString();
-			var lines = printLine(self, "", displayedKey, val, 0);
-			lines.attr("data-index", i);
+		try {
+			for(var i=0; i < count && cursor.hasNext(); i++){
+				var val = cursor.next();
+				self.state.displayedResult.push(val);
+				var displayedKey = "(" + (i + 1) + ")";
+				if(val._id instanceof MongoNS.ObjectId)
+					displayedKey += " " + val._id.toString();
+				var lines = printLine(self, "", displayedKey, val, 0);
+				lines.attr("data-index", i);
+			}
+			self.state.currentCursor = cursor;
+		}catch(e) {
+			printText(self, e.toString());
 		}
-		self.state.currentCursor = cursor;
 	}
 
 	/**
@@ -347,6 +352,27 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			return printUnsupported(key, displayedKey, val, indent); //should not happen
 	}
 
+	/**
+	 * Prints text to the result table.
+	 *
+	 * @param {ConnectionTab} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
+	 * @param {string|string[]} text - the text to print or an array of strings, which will be interpreted as lines
+	 * @private
+	 * @memberof MongoBrowser(NS)~
+	 */
+	function printText(self, text){
+		self.uiElements.printContainer.show();
+
+		if(text instanceof Array){
+			var textString = "";
+			for(var i=0; i < text.length; i++){
+				textString += text[i] + "\n";
+			}
+			text = textString;
+		}
+		self.uiElements.printedLines.text(text);
+	}
+
 
 
 	/**
@@ -417,9 +443,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		if(curQuery === null)
 			return;
 
-		var origSkip = curQuery.origSkip || curQuery._skip;
+		var origSkip = curQuery.origSkip || curQuery._skip; //save skip-value, in case the user called .skip()
 
-		curQuery = this.state.currentQuery = curQuery.clone();
+		curQuery = curQuery.clone();
 		this.state.currentQuery.origSkip = origSkip;
 
 		curQuery.skip(origSkip + newStart);
@@ -427,7 +453,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		this.state.currentCursor = curQuery._exec();
 		printBatch(this, this.state.currentCursor, count);
 
-		this.uiElements.iterate.start.val(start - count);
+		this.uiElements.iterate.start.val(newStart);
 
 		this.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
 		this.uiElements.results.children("[data-indent]").each(function(index, elem){
@@ -465,6 +491,23 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 */
 	ConnectionTab.prototype.showHint = function() {
 		this.state.codeMirror.showHint({completeSingle: false, hint: MongoNS.mongoDBHintAdapter, connectedTab: this});
+	}
+
+	/**
+	 * (Re-)Prints the results as stored in state.displayedResults. Can be used to update the view after the state was altered.
+	 */
+	ConnectionTab.prototype.updateView = function(){
+		this.uiElements.results.children().remove();
+
+		for(var i=0; i < this.state.displayedResult.length; i++){
+			var val = this.state.displayedResult[i];
+
+			var displayedKey = "(" + (i + 1) + ")";
+			if(val._id instanceof MongoNS.ObjectId)
+				displayedKey += " " + val._id.toString();
+			var lines = printLine(this, "", displayedKey, val, 0);
+			lines.attr("data-index", i);
+		}
 	}
 
 	/**

@@ -56,21 +56,12 @@ Mongo.prototype.runCommand = function(database, cmdObj, options){
 
 	var stringifyFunctions = function (key, val){ if(typeof val === "function") return val.toString(); return val};
 
-	var result = null;
-	$.ajax("/shell/runCommand", {
-			async: false,
-			data: JSON.stringify({database: database, command: JSON.stringify(cmdObj, stringifyFunctions), options: options, connection: this.getConnectionData()}),
-            method: "POST",
-            contentType: "application/json; charset=utf-8"
-		})
-		.done(function(data){
-			result = jsObjectToJSObjectWithBsonValues(data);
-		})
-		.fail(function(jqXHR){
-            if(typeof jqXHR.responseJSON !== "undefined" && typeof jqXHR.responseJSON.error !== "undefined")
-                throw Error(jqXHR.responseJSON.error);
-            throw Error("Executing the command failed for an unknown reason.")
-		});
+	var toSend = {database: database,
+					command: JSON.stringify(cmdObj, stringifyFunctions),
+					options: options,
+					connection: this.getConnectionData()};
+
+	var result = jsObjectToJSObjectWithBsonValues(Connection.runCommand(toSend, this));
 
 	if(result === null)
 		throw new Error("An error occured when running the command");

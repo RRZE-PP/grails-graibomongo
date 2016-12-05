@@ -93,6 +93,7 @@ var MongoNS = (function(){
 	    Mongo = templ,
 	    DB = templ,
 	    DBQuery = templ,
+	    DBCommandCursor = templ,
 	    sh = templ,
 	    execute = execute;
 
@@ -105,6 +106,7 @@ var MongoNS = (function(){
 		Mongo : Mongo,
 		DB : DB,
 		DBQuery : DBQuery,
+		DBCommandCursor : DBCommandCursor,
 		Cursor: Cursor,
 		sh: sh,
 		execute: execute,

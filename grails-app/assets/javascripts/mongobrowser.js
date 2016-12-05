@@ -6,7 +6,7 @@
 
 // <!-- jquery, jquery ui -->
 //= require mongoBrowser-src/assets/lib/jquery-2.2.3.min.js
-//= require mongoBrowser-src/assets/lib/jquery-ui-1.11.4.custom/jquery-ui.min.js
+//= require mongoBrowser-src/assets/lib/jquery-ui-1.12.0.custom/jquery-ui.min.js
 
 // <!-- contextMenu -->
 //= require mongoBrowser-src/assets/lib/jquery-contextMenu/jquery.contextMenu.min.js

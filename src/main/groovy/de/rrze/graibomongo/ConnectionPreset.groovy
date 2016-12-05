@@ -50,6 +50,8 @@ class ConnectionPreset {
 	                         password: "${password}",
 	                         method: "${method.id}"
                          }"""
+        }else{
+        	result += ", auth:{}"
         }
 
         result += "}"

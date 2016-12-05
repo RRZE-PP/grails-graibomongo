@@ -16,6 +16,8 @@ Object.bsonsize = function(){
 function NumberLong(){
 	if(arguments.length == 1 && typeof arguments[0] === "string")
 		return bson().Long.fromString(arguments[0]);
+	else if(arguments.length == 1 && typeof arguments[0] === "number")
+		return bson().Long.fromNumber(arguments[0]);
 	else
 		bson().Long.apply(this, arguments);
 }
@@ -87,6 +89,7 @@ function jsObjectToJSObjectWithBsonValues(object){
 // x x NumberLong
 // TODO: Copy RegExp into Namespace, because we change its prototype, which should not be visible outside of namespace
 // caution: we have to handle user inputted regexps then!
+// same for Date
 
 
 /**
@@ -110,5 +113,8 @@ MinKey.prototype.toJSON = function() {
 
 RegExp.prototype.toJSON = function(){
 	return { "$regex": this.source, "$options": this.flags };
+}
 
+Date.prototype.toJSON = function() {
+	return { "$date": this.toISOString() };
 }

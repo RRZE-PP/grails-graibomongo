@@ -43,7 +43,15 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		var self = this;
 		var options = self.options = typeof options !== "undefined" ? options : {};
-		options.assetPrefix = typeof options.assetPrefix !== "undefined" ? options.assetPrefix : "";
+
+		function def(optionName, defValue){
+			options[optionName] = (typeof options[optionName] === "undefined") ? defValue : options[optionName];
+		}
+
+		def("assetPrefix",  "");
+		def("window", "resizable");
+		def("autoExecuteCode", true);
+		def("expandFirstDoc", true);
 
 		self.state = {
 			connectionPresets: typeof options.connectionPresets !== "undefined" ? options.connectionPresets : [],
@@ -61,10 +69,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		self.rootElement.attr("id", "mongoBrowser-"+self.instanceNo)
 		self.rootElement.css("display", "");
 
-		if(options.window === "moveable")
-			self.rootElement.dialog({minWidth:642, minHeight:550});
-		else if(options.window === "resizable")
-			self.rootElement.resizable({minWidth:642, minHeight:550});
+		self.rootElement.resizable({minWidth:642, minHeight:550});
+
+		var optionKeys = Object.keys(options);
+		for(var i = 0; i < optionKeys.length; i++){
+			var option = optionKeys[i];
+			self.option(option, options[option]);
+		}
 
 		MongoBrowser.instances["mongoBrowser-"+self.instanceNo] = self;
 	}
@@ -126,15 +137,18 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {MongoBrowser} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
 	 * @param {string} database - the database to operate on in this tab
 	 * @param {string} collection - the default collection in this tab
+	 * @return {string} the newly created tab's id
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 */
 	function addTab(self, database, collection){
 		var tab = self.state.tabFactory.newTab(database, collection);
 		tab.appendTo(self.uiElements.tabs.container);
-		tab.execute();
+		if(self.options.autoExecuteCode)
+			tab.execute();
 		tab.select();
 		self.state.tabs[tab.id()] = tab;
+		return tab.id();
 	}
 
 	/**
@@ -235,6 +249,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	function initUIElements(self){
 		self.uiElements = {root:null, dialogs: {}, tabs:{}, buttons:{}, sideBar:null};
 		createRootElement(self);
+		createMenuBar(self);
 		createDialogs(self);
 		createTabEnvironment(self);
 		createActionBarButtons(self);
@@ -341,6 +356,23 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		return true;
 	}
+
+
+	function windowMode(self, action){
+		if(action === "enter"){
+			self.rootElement.is(".ui-resizable") && self.rootElement.resizable("destroy");
+			self.rootElement.dialog({minWidth:642, minHeight:580});
+			self.uiElements.menuBar.find("[name='windowMode']").prop("checked", true);
+			//reset sideBar resizability because it gets lost somehow
+			self.uiElements.sideBar.parent().resizable("destroy");
+			self.uiElements.sideBar.parent().resizable({handles: "e", minWidth: 120});
+		}else if(action === "leave"){
+			self.rootElement.is(".ui-dialog-content") && self.rootElement.dialog("destroy");
+			self.rootElement.resizable({minWidth:642, minHeight:580});
+			self.uiElements.menuBar.find("[name='windowMode']").prop("checked", false);
+		}
+	}
+
 	/******************************************************************************************************************
 	 *                                         BEGIN PUBLIC MEMBERS                                                   *
 	 *                     (the following functions will be exported via the MongoBrowser.prototype)                  *
@@ -392,6 +424,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {string} [username=] - the username to authenticate with
 	 * @param {string} [password=] - the password to authenticate with
 	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
+	 * @return {bool} true on success, false if no connection was established
 	 * @memberof MongoBrowser#
 	 */
 	function connect(self, hostname, port, database, performAuth, adminDatabase, username, password, method){
@@ -426,6 +459,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			serverItem.find(".listItem").text(hostname);
 			serverItem.append(databaseItems);
 
+			//here we will store all tab ids ever opened from this connection
+			mongo.openedTabs = []
+
 			for(var i=0; i<databases.length; i++){
 				var databaseName = databases[i];
 				var dbItem = listItem.clone().addClass("database");
@@ -453,22 +489,64 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					var collItem = listItem.clone().addClass("collection");
 					collItem.find(".listItem").text(collection);
 					collItem.on("dblclick", (function(mongo, databaseName, collection){
-						return function(){addTab(self, mongo.getDB(database), collection)};
+						return function(){
+							var newTabId = addTab(self, mongo.getDB(database), collection);
+							mongo.openedTabs.push(newTabId);
+						};
 					})(mongo, databaseName, collection));
 					collectionItems.append(collItem);
 				}
 			}
 
 			self.uiElements.sideBar.append(serverItem);
+			return true;
 		}catch(e){
 			openDialog(self, "showMessage", "Could not connect", e.toString(), "error");
+			return false;
 		}
+	}
+
+	/**
+	 * Closes the n-th connection in this' mongobrowsers state.connections. This corresponds to the n-th top-level
+	 * item in the sidebar,
+	 * @param {MongoBrowser} self  - Please see Class/Namespace description!
+	 * @param {number} connectionNumber - the index of the connection to close in state.connections or the sidebar
+	 * @memberof MongoBrowser#
+	 */
+	function closeConnection(self, connectionNumber){
+		var connection = self.state.connections[connectionNumber];
+		for(var i = 0; i < connection.openedTabs.length; i++){
+			var tabId = connection.openedTabs[i];
+			self.uiElements.tabs.container.find("[aria-controls='" + tabId + "']").find(".closeButton").click();
+		}
+		self.uiElements.sideBar.find(".server").eq(connectionNumber).remove();
+		self.state.connections.splice(connectionNumber);
+	}
+
+	function option(self, option, value){
+		if(typeof value === "undefined")
+			return self.options[option];
+
+		var optionCallbacks = {
+			autoExecuteCode: function(v) {self.uiElements.menuBar.find("[name='autoExecuteCode']").prop("checked", v);},
+			expandFirstDoc: function(v) {self.uiElements.menuBar.find("[name='expandFirstDoc']").prop("checked", v);},
+			window: function(v) {if(v === "moveable") windowMode(self, "enter");
+			                     else if(v === "resizable") windowMode(self, "leave");
+			                     else return false}
+		}
+
+		if(typeof optionCallbacks[option] === "function" && optionCallbacks[option](value) === false)
+			return;
+
+		self.options[option] = value;
 
 	}
 
 	//Export MongoBrowser API
 	MongoBrowser.prototype.addConnectionPreset = function(){Array.prototype.unshift.call(arguments, this); return addConnectionPreset.apply(this, arguments)};
 	MongoBrowser.prototype.connect             = function(){Array.prototype.unshift.call(arguments, this); return connect.apply(this, arguments)};
+	MongoBrowser.prototype.closeConnection     = function(){Array.prototype.unshift.call(arguments, this); return closeConnection.apply(this, arguments)};
+	MongoBrowser.prototype.option              = function(){Array.prototype.unshift.call(arguments, this); return option.apply(this, arguments)};
 
 	//Import dependencies
 	if(typeof MongoBrowserNS === "undefined")
@@ -482,6 +560,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	var createTabEnvironment = guiCommands.createTabEnvironment;
 	var createActionBarButtons = guiCommands.createActionBarButtons;
 	var createSidebarEnvironment = guiCommands.createSidebarEnvironment;
+	var createMenuBar = guiCommands.createMenuBar;
 
 	//Export MongoBrowser as global name
 	window.MongoBrowser = MongoBrowser;

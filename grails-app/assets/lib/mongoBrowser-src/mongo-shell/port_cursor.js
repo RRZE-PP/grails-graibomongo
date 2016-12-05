@@ -203,7 +203,7 @@ DBClientCursor.prototype.assembleQueryRequest = function(/*const string& */ns,
 
 DBClientCursor.prototype._assembleInit = function() {
     // If we haven't gotten a cursorId yet, we need to issue a new query or command.
-    if (!this.cursorId) {
+    if (!this.cursorId || this.cursorId === 0 || this.cursorId instanceof NumberLong && this.cursorId.isZero()) {
         // HACK:
         // Unfortunately, this code is used by the shell to run commands,
         // so we need to allow the shell to send invalid options so that we can
@@ -231,7 +231,7 @@ DBClientCursor.prototype._assembleInit = function() {
 
 DBClientCursor.prototype.dataReceived = function(/*bool&*/ retry, /*string&*/ host) {
     // If this is a reply to our initial command request.
-    if (this._isCommand && this.cursorId === NumberLong(0)) {
+    if (this._isCommand && (this.cursorId === 0 || (this.cursorId instanceof NumberLong && this.cursorId.isZero()))) {
         this.commandDataReceived();
         return;
     }
@@ -314,25 +314,15 @@ DBClientCursor.prototype.init = function(){
     toSend.connection = this.connection;
 
     var self = this;
-    $.ajax("/shell/initCursor", {
-                async: false,
-                data: JSON.stringify(toSend),
-                method: "POST",
-                contentType: "application/json; charset=utf-8"
-            })
-            .done(function(data){
-                self.batch.m = data;
-                if(typeof data !== "object" || data === {}){
-                    throw Error("DBClientCursor::init message from call() was empty or invalid");
-                }
-                self.dataReceived();
-            })
-            .fail(function(jqXHR){
-                if(typeof jqXHR.responseJSON !== "undefined" && typeof jqXHR.responseJSON.error !== "undefined")
-                    throw Error(jqXHR.responseJSON.error);
-                throw Error("DBClientCursor::init failed");
-            });
+    function handleData(data){
+        self.batch.m = data;
+        if(typeof data !== "object" || data === {}){
+            throw Error("Received invalid or empty data during initialization");
+        }
+        self.dataReceived();
+    }
 
+    Connection.initCursor(toSend, handleData, this);
 }
 
 DBClientCursor.prototype.more = function (){
@@ -430,24 +420,15 @@ DBClientCursor.prototype.requestMore = function(){
     toSend.connection = this.connection;
 
     var self = this;
-    $.ajax("/shell/requestMore", {
-                async: false,
-                data: JSON.stringify(toSend),
-                method: "POST",
-                contentType: "application/json; charset=utf-8"
-            })
-            .done(function(data){
-                self.batch.m = data;
-                if(typeof data !== "object" || data === {}){
-                    throw Error("DBClientCursor::init message from call() was empty or invalid");
-                }
-                self.dataReceived();
-            })
-            .fail(function(jqXHR){
-                if(typeof jqXHR.responseJSON !== "undefined" && typeof jqXHR.responseJSON.error !== "undefined")
-                    throw Error(jqXHR.responseJSON.error);
-                throw Error("DBClientCursor::init failed");
-            });
+    function handleData(data){
+        self.batch.m = data;
+        if(typeof data !== "object" || data === {}){
+            throw Error("Received invalid or empty data while requesting more data");
+        }
+        self.dataReceived();
+    }
+
+    Connection.requestMore(toSend, handleData, this);
 }
 
 
