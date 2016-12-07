@@ -23,6 +23,7 @@ class ResultFlagType {
 class AuthData implements grails.validation.Validateable {
 	String user
 	String password
+	String connectionId
 
 	String authDatabase
 	String authMechanism
@@ -34,7 +35,8 @@ class AuthData implements grails.validation.Validateable {
 
 	static constraints = {
 		user nullable: false, blank: false
-		password nullable: false, blank: false
+		password nullable: true, validator: { val, obj -> obj.connectionId != null ? true : (val != null && val != "")}
+		connectionId nullable: true, blank: false
 		authDatabase nullable: false, blank: false
 		authMechanism nullable: false, inList: ["scram-sha-1", "mongodb-cr"]
 	}
@@ -52,14 +54,18 @@ class ConnectionData implements grails.validation.Validateable {
 		if(performAuth != true)
 			return new ArrayList<MongoCredential>()
 
+		if(auth.connectionId != null){
+			auth.password = ConnectionPreset.getPasswordFromCache(auth.connectionId)
+		}
+
 		ArrayList<MongoCredential> credentials = new ArrayList<MongoCredential>()
 		//TODO: check for encoding issues in password with toCharArray!
 		switch(auth.authMechanism){
 			case "scram-sha-1":
-				credentials.push(MongoCredential.createScramSha1Credential(auth.user, auth.authDatabase, auth.password.toCharArray()))
+				credentials.push(MongoCredential.createScramSha1Credential(auth.user, auth.authDatabase, auth.password?.toCharArray()))
 				break
 			case "mongodb-cr":
-				credentials.push(MongoCredential.createMongoCRCredential(auth.user, auth.authDatabase, auth.password.toCharArray()))
+				credentials.push(MongoCredential.createMongoCRCredential(auth.user, auth.authDatabase, auth.password?.toCharArray()))
 				break
 			default:
 				throw new IllegalArgumentException("Unknown auth mechanism")

@@ -33,6 +33,9 @@ class CmeditorTagLib {
 					}else{
 						preset.auth(auth.username, auth.password)
 					}
+
+					if(conn.hidePassword)
+						preset.hidePassword()
 				}
 
 				defaultPresets.add(preset)
