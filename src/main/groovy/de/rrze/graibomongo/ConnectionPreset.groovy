@@ -1,5 +1,7 @@
 package de.rrze.graibomongo
 
+import grails.converters.JSON
+
 class ConnectionPreset {
 	String name;
 	String host;
@@ -38,24 +40,22 @@ class ConnectionPreset {
 	}
 
 	def toJSON(){
-		def result = """{name: "${name}",
-                       host: "${host}",
-                       port: 27017,
-                       performAuth: ${performAuth}"""
-        if(performAuth){
-        	result += """,
-        				auth: {
-	                         adminDatabase: "${authDatabase}",
-	                         username: "${username}",
-	                         password: "${password}",
-	                         method: "${method.id}"
-                         }"""
-        }else{
-        	result += ", auth:{}"
-        }
+		def result = [
+			name: name,
+			host: host,
+			port: port,
+			performAuth: performAuth,
+			auth: [:]]
 
-        result += "}"
+		if(performAuth){
+			result.auth = [
+				adminDatabase: authDatabase,
+				username: username,
+				method: method.id,
+				password: password
+			]
+		}
 
-        return result;
+		return (result as JSON).toString()
 	}
 }
