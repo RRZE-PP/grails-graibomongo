@@ -67,6 +67,9 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					var newLine = $("<tr data-connectionIndex='"+i+"'><td>"+p.name+"</td> " +
 						             "<td>"+p.host+":"+p.port+"</td><td>" +
 						             (p.performAuth ? p.auth.adminDatabase + " / " + p.auth.username : "- - -" ) + "</td></tr>");
+					if(!(typeof p.auth.connectionId === "undefined" || p.auth.connectionId === null)){
+						newLine.attr("data-locked", "locked");
+					}
 					newLine.on("dblclick", (function(newLine){
 						return function(){
 							newLine.click();
@@ -89,6 +92,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					var curLine = self.uiElements.dialogs.connectionManager.find(".current");
 					if(curLine.size() === 0)
 						return;
+					if(curLine.attr("data-locked") === "locked"){
+						openDialog(self, "showMessage", "Connection is locked",
+						           "This is a default connection with hidden password, you can't edit it. Please clone it first.", "error");
+						return;
+					}
 					var idx = parseInt(curLine.attr("data-connectionIndex"));
 					openDialog(self, "connectionSettings", idx)
 			}
@@ -101,6 +109,11 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					var cloned = $.extend(true, {}, self.state.connectionPresets[idx]);
 					cloned.name = "Copy of " + cloned.name;
 					openDialog(self, "connectionSettings", cloned);
+					if(curLine.attr("data-locked") === "locked"){
+						cloned.auth.connectionId = null;
+						openDialog(self, "showMessage", "Password unknown",
+						            "The password could not be cloned as it is stored secretly on the server! Please put it in manually!", "error");
+					}
 			}
 
 			function removeCurrentConnectionPreset(){
@@ -119,7 +132,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					var idx = parseInt(curLine.attr("data-connectionIndex"));
 					var preset= self.state.connectionPresets[idx];
 					return self.connect(preset.host, preset.port, "test", //todo put correct database here
-						preset.performAuth, preset.auth.adminDatabase, preset.auth.username, preset.auth.password, preset.auth.method)
+						preset.performAuth, preset.auth.adminDatabase, preset.auth.username,
+						preset.auth.password, preset.auth.method, preset.auth.connectionId)
 
 			}
 
@@ -176,6 +190,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				var host = self.uiElements.dialogs.connectionSettings.find(".connectionHost").val();
 				var port = parseInt(self.uiElements.dialogs.connectionSettings.find(".connectionPort").val());
 
+				var curDialog = self.uiElements.dialogs.connectionSettings;
+
 				var adminDatabase = curDialog.find("[name=adminDatabase]").val();
 				var username = curDialog.find("[name=username]").val();
 				var password = curDialog.find("[name=password]").val();
@@ -193,7 +209,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					return;
 				var idx = parseInt(curLine.attr("data-connectionIndex"));
 
-				var curDialog = self.uiElements.dialogs.connectionSettings
+				var curDialog = self.uiElements.dialogs.connectionSettings;
 
 				var name = curDialog.find(".connectionName").val();
 				var host = curDialog.find(".connectionHost").val();

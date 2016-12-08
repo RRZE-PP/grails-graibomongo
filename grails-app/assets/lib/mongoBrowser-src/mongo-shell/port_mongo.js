@@ -175,7 +175,7 @@ Mongo.prototype.update = function(ns, query, obj, upsert) {
 
 };
 
-function simple_connect(hostname, port, database, user, password, authDatabase, authMethod, performAuth){
+function simple_connect(hostname, port, database, user, password, authDatabase, authMethod, performAuth, hiddenPassword){
 	if(arguments.length < 3)
 		throw Error("Hostname, port and database are required");
 
@@ -204,7 +204,8 @@ function simple_connect(hostname, port, database, user, password, authDatabase, 
 		performAuth: performAuth ? true : false, //"cast" to boolean
 		auth: {
 			user: isDefined(user, null),
-			password: isDefined(password, null),
+			password: !hiddenPassword ? isDefined(password, null) : null,
+			connectionId: hiddenPassword ? isDefined(password, null) : null,
 
 			authDatabase: isDefined(authDatabase, null),
 			authMechanism: isDefined(authMethod, null),

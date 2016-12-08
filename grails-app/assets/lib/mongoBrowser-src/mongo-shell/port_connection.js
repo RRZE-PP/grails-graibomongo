@@ -33,9 +33,9 @@ DatabaseConnectionError.prototype.constructor = DatabaseConnectionError;
 
 var Connection = (function(){
 	var backendURLs = {
-		initCursor:  "http://localhost:8080/shell/initCursor",
-		requestMore: "http://localhost:8080/shell/requestMore",
-		runCommand:  "http://localhost:8080/shell/runCommand"
+		initCursor:  "/shell/initCursor",
+		requestMore: "/shell/requestMore",
+		runCommand:  "/shell/runCommand"
 	}
 
 	function handleConnectionFails(jqXHR){

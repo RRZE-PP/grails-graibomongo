@@ -112,50 +112,72 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	}
 
 	/**
-	 * Execute the code from the prompt within the MongoNS namespace on this tab's db
+	 * Execute the code from the prompt or the given code snippet within the MongoNS namespace
+	 * on this tab's db
+	 *
+	 * @param {string} [code] - if provided, this code will be executed, else the content of the prompt
 	 * @method
 	 * @memberof ConnectionTab
 	 */
-	ConnectionTab.prototype.execute = function(){
+	ConnectionTab.prototype.execute = function(code){
 		var self = this;
 
 		var startTime = $.now();
+		var printedLines = [];
+		var code = typeof code !== "undefined" ? code : this.state.codeMirror.getDoc().getValue();
 
-		var printedLines = []
-		var oldPrint = MongoNS.__namespacedPrint;
-		MongoNS.__namespacedPrint = function(line){
-			printedLines.push(line);
-		}
+		this.state.currentCursor = null;
+		this.state.currentQuery = null;
+		this.uiElements.info.collection.parent().hide();
 
-		try {
-			this.state.currentCursor = null;
-			this.state.currentQuery = null;
-
-			var ret = MongoNS.execute(MongoNS, this.state.db, this.state.codeMirror.getDoc().getValue());
-
-			if(ret instanceof MongoNS.DBQuery){
-				this.state.collection = ret._collection._shortName;
-				this.state.db = ret._db;
-				this.state.currentQuery = ret;
-
-				this.uiElements.info.database.text(ret._db._name);
-				this.uiElements.info.collection.text(ret._collection._shortName);
-				this.uiElements.info.collection.parent().show();
-				ret = ret._exec();
-			}else{
-				this.uiElements.info.collection.parent().hide();
-			}
-
-			if(ret instanceof MongoNS.WriteResult){
-				MongoNS.__namespacedPrint(ret.toString());
-				ret.__magicNoPrint = 1;
-			}
-		}catch(e){
-			var ret = undefined;
-			MongoNS.__namespacedPrint(e.toString());
+		//handle special cases
+		var isUseCommand = code.match(/^ *use +([^$. ][^. ]*)$/)
+		if(isUseCommand != null){
+			//use db
+			var ret = executeUseCommand(isUseCommand[1]);
+		}else{
+			var ret = executeQuery(code);
 		}
 
 		printExecutionResult(startTime, ret);
+
+		function executeUseCommand(newDb){
+			code = "db = db.getSiblingDB('" + newDb.replace("'", "\'") + "')";
+			self.state.db = MongoNS.execute(MongoNS, self.state.db, code);
+
+			self.uiElements.info.database.text(newDb);
+			self.uiElements.info.collection.parent().hide();
+			printedLines.push("Switched to db " + newDb);
+
+			return {__magicNoPrint: true};
+		}
+
+		function executeQuery(code){
+			var ret;
+			try {
+				ret = MongoNS.execute(MongoNS, self.state.db, code);
+
+				if(ret instanceof MongoNS.DBQuery){
+					self.state.collection = ret._collection._shortName;
+					self.state.db = ret._db;
+					self.state.currentQuery = ret;
+
+					self.uiElements.info.database.text(ret._db._name);
+					self.uiElements.info.collection.text(ret._collection._shortName);
+					self.uiElements.info.collection.parent().show();
+					ret = ret._exec();
+				}
+
+				if(ret instanceof MongoNS.WriteResult){
+					printedLines.push(ret.toString());
+					ret.__magicNoPrint = 1;
+				}
+			}catch(e){
+				ret = undefined;
+				printedLines.push(e.toString());
+			}
+			return ret;
+		}
 
 
 		function printExecutionResult(startTime, result){

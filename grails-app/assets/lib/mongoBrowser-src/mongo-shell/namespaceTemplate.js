@@ -114,7 +114,8 @@ var MongoNS = (function(){
 		NumberLong: NumberLong,
 		tojson: tojson,
 		WriteResult: WriteResult,
-		mongoDBHintAdapter: mongoDBHintAdapter
+		mongoDBHintAdapter: mongoDBHintAdapter,
+		initServerConnection: Connection.initServerConnection
 	};
 
 	return toBeAccessible;

@@ -330,20 +330,27 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {string} [username=] - the username to authenticate with
 	 * @param {string} [password=] - the password to authenticate with
 	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
+	 * @param {string} [connectionId=null] - if provided, the password will be ignored and the connectionId sent instead, which the server
+	 *                                       uses to identify the connection and load the password from a cache
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 * @returns {boolean|string} true if the test was successful or a string describing the error
 	 */
-	function testConnection(self, hostname, port, database, performAuth, adminDatabase, username, password, method){
+	function testConnection(self, hostname, port, database, performAuth, adminDatabase, username, password, method, connectionId){
 		if(typeof performAuth === "undefined"){ performAuth = false; }
 		if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
 		if(typeof username === "undefined"){ username = ""; }
 		if(typeof password === "undefined"){ password = ""; }
 		if(typeof method === "undefined"){ method = "scram-sha-1"; }
+		if(typeof connectionId === "undefined"){ connectionId = false; }
 
 		try {
 			if(performAuth){
-				var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+				if(connectionId !== false){
+					var db = MongoNS.simple_connect(hostname, port, database, username, connectionId, adminDatabase, method, true, true);
+				}else{
+					var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+				}
 			}else{
 				var db = MongoNS.simple_connect(hostname, port, database);
 			}
@@ -390,17 +397,20 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {string} [username=] - the username to authenticate with
 	 * @param {string} [password=] - the password to authenticate with
 	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
+	 * @param {string} [connectionId=null] - if provided, the password will be ignored and the connectionId sent instead, which the server
+	 *                                       uses to identify the connection and load the password from a cache
 	 * @memberof MongoBrowser#
 	 */
-	function addConnectionPreset(self, name, host, port, performAuth, adminDatabase, username, password, method){
+	function addConnectionPreset(self, name, host, port, performAuth, adminDatabase, username, password, method, connectionId){
 		if(typeof performAuth === "undefined"){ performAuth = false; }
 		if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
 		if(typeof username === "undefined"){ username = ""; }
 		if(typeof password === "undefined"){ password = ""; }
 		if(typeof method === "undefined"){ method = "scram-sha-1"; }
+		if(typeof connectionId === "undefined"){ connectionId = null; }
 
 		self.state.connectionPresets.push({name:name, host:host, port:port, performAuth: performAuth,
-					auth: {adminDatabase: adminDatabase, username: username, password: password, method: method}});
+					auth: {adminDatabase: adminDatabase, username: username, password: password, method: method, connectionId: connectionId}});
 		self.uiElements.dialogs.connectionManager.initialise(self.uiElements.dialogs.connectionManager, self.state.connectionPresets);
 	}
 
@@ -424,19 +434,26 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {string} [username=] - the username to authenticate with
 	 * @param {string} [password=] - the password to authenticate with
 	 * @param {string} [method=scram-sha-1] - one of ["scram-sha-1", "mongodb-cr"]
+	 * @param {string} [connectionId=null] - if provided, the password will be ignored and the connectionId sent instead, which the server
+	 *                                       uses to identify the connection and load the password from a cache
 	 * @return {bool} true on success, false if no connection was established
 	 * @memberof MongoBrowser#
 	 */
-	function connect(self, hostname, port, database, performAuth, adminDatabase, username, password, method){
+	function connect(self, hostname, port, database, performAuth, adminDatabase, username, password, method, connectionId){
 		try {
 			if(typeof performAuth === "undefined"){ performAuth = false; }
 			if(typeof adminDatabase === "undefined"){ adminDatabase = "admin"; }
 			if(typeof username === "undefined"){ username = ""; }
 			if(typeof password === "undefined"){ password = ""; }
 			if(typeof method === "undefined"){ method = "scram-sha-1"; }
+			if(typeof connectionId === "undefined" || connectionId === null){ connectionId = false; }
 
 			if(performAuth){
-				var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+				if(connectionId !== false){
+					var db = MongoNS.simple_connect(hostname, port, database, username, connectionId, adminDatabase, method, true, true);
+				}else{
+					var db = MongoNS.simple_connect(hostname, port, database, username, password, adminDatabase, method, true);
+				}
 			}else{
 				var db = MongoNS.simple_connect(hostname, port, database);
 			}
@@ -490,7 +507,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					collItem.find(".listItem").text(collection);
 					collItem.on("dblclick", (function(mongo, databaseName, collection){
 						return function(){
-							var newTabId = addTab(self, mongo.getDB(database), collection);
+							var newTabId = addTab(self, mongo.getDB(databaseName), collection);
 							mongo.openedTabs.push(newTabId);
 						};
 					})(mongo, databaseName, collection));
@@ -583,6 +600,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
  * @property {string} auth.username - the username to authenticate with
  * @property {string} auth.password - the password to authenticate with
  * @property {string} auth.method - one of ["scram-sha-1", "mongodb-cr"]
+ * @property {string} auth.connectionId - if not null, the password will be ignored and this id sent instead. the server
+ *                                        can use it to identify the connection locally so that the password does not leave the server
  */
 
 /**
