@@ -5,6 +5,11 @@
 </head>
 <body>
 
-<mongoBrowser:window preset="${new ConnectionPreset("test", "test").auth("foo", "bar", "admin2", ConnectionPreset.Method.MONGODB_CR)}" presets="${[new ConnectionPreset("test", "test2"), new ConnectionPreset("test", "test3")]}"/>
+<%@ page import="de.rrze.graibomongo.ConnectionPreset" %>
+<mongoBrowser:block presets="${[
+		new ConnectionPreset("dev-gsp-hiddenPW", "localhost").auth("root", "root").hidePassword(),
+		new ConnectionPreset("dev-gsp-withAuth", "localhost").auth("root", "root", "admin", ConnectionPreset.Method.MONGODB_CR),
+		new ConnectionPreset("dev-gsp-withouth", "localhost")]}"/>
+
 </body>
 </html>

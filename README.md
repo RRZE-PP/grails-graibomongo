@@ -30,10 +30,12 @@ list of `ConnectionPreset`s to the presets attribute (or both, they will be
 concatenated):
 
 ```gsp
-<mongoBrowser:window
-     preset="${new ConnectionPreset("name", "host").auth("user", "password", "admin", ConnectionPreset.Method.MONGODB_CR)}"
-     presets="${[new ConnectionPreset("name2", "host2"),
-                 new ConnectionPreset("name3", "host3")]}" />
+
+<%@ page import="de.rrze.graibomongo.ConnectionPreset" %>
+<mongoBrowser:block presets="${[
+        new ConnectionPreset("dev-gsp-hiddenPW", "localhost").auth("root", "root").hidePassword(),
+        new ConnectionPreset("dev-gsp-withAuth", "localhost").auth("root", "root", "admin", ConnectionPreset.Method.MONGODB_CR),
+        new ConnectionPreset("dev-gsp-withoth", "localhost")]}"/>
 ```
 
 ## Connection Presets
