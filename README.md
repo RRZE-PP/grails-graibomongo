@@ -37,6 +37,10 @@ concatenated):
 ```
 
 ## Connection Presets
+### In a GSP
+
+In individual GSPs you can pre-populate the available connections by passing an instance or a list of the following class in the
+preset or the presets attribute respectively.
 
 `class de.rrze.mongobrowser.ConnectionPreset`:
 
@@ -44,13 +48,55 @@ concatenated):
 	* `name`: The name to give this preset
 	* `host`: The host where the mongodb runs (must be reachable from the backend, not the frontend!)
 	* `port`: The port of the mongodb
-* **Authentication method**: `auth(String username, String password, String database = "admin", Method method = Method.SCRAM_SHA_1){`
+* **Authentication method**: `auth(String username, String password, String database = "admin", Method method = Method.SCRAM_SHA_1)`
 	* Call on an instance. Returns the instance for easy usage in a gsp (see above).
 	* `username`: the username to authenticate with
 	* `password`: the password to authenticate with
 	* `database`: the admin database in this mongodb instance (usually `admin`)
 	* `method`: the authentication method to use
+* **Hiding the password from the user**: `hidePassword()`
+	* Call on an instance. Returns the instance for chaining
+	* When called, the connection will be cached locally on the server and the password will be raplaced by a string identifying the
+	  connection. When connecting the client will send this string and the password will be loaded from the cache.
 
 `enum de.rrze.mongobrowser.ConnectionPreset.Method`:
 * SCRAM_SHA_1
 * MONGODB_CR
+
+### Globally in the config
+
+Alternatively you can add a preset to all instances of the mongobrowser across all GSPs. To do so, add to your application.yml
+a config like this:
+
+```yaml
+graibomongo:
+    defaultConnections:
+        dev-withAuth:
+            host: localhost
+            port: 27017            #optional, default: 27017
+            hidePassword: true     #optional, calls the hidePassword Method (see above)
+            auth:                  #optional, when left out, no authentication will be assumed
+                username: foobar
+                password: blafoo
+                database: admin    #optional, default: admin
+                method: mongodb-cr #optional, default: scram-sha-1
+        dev-without:
+            host: localhost
+            port: 27017
+```
+
+## Configuration
+To configure the plugin you can add a config like this to your application.yml:
+
+```yaml
+graibomongo:
+    # Configuration of the plugin
+    clientExpiration: 28800     # number of seconds, a client will be kept after the last interaction with it (default: 8h)
+    maxCachedClients: 1000      # maximum number of clients to cache (default: 3000)
+    maxCachedCursors: 5000000   # maximum number of cursors to cache (default: maxCachedClients * 500)
+    pruneAtPercentage: 80       # filling level of the cache at which expired clients will be removed (default: 80)
+    # Configuration of the mongodb driver instances used in the plugin
+    socketTimeout: 10000        # this value is passed to Socket.setSoTimeout(int) (default: 60000)
+    connectTimeout: 500         # connection timeout in ms; this is for establishing the socket connections (default: 3000)
+    serverSelectionTimeout: 750 # how long to wait in ms for server selection to succeed (default: connectTimeout + 1000)
+```
