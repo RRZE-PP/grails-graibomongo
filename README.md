@@ -102,3 +102,11 @@ graibomongo:
     connectTimeout: 500         # connection timeout in ms; this is for establishing the socket connections (default: 3000)
     serverSelectionTimeout: 750 # how long to wait in ms for server selection to succeed (default: connectTimeout + 1000)
 ```
+
+### Logging
+To enable logging put this into your `conf/logback.groovy`:
+```
+logger("grails.app.taglib.de.rrze.graibomongo", DEBUG)
+logger("grails.app.controllers.de.rrze.graibomongo", DEBUG)
+logger("grails.app.services.de.rrze.graibomongo", DEBUG)
+```
