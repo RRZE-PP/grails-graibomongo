@@ -70,7 +70,7 @@ task wrapper(type: Wrapper) {
 assets {
   minifyJs = true
   minifyCss = true
-  developmentRuntime=false
+  // developmentRuntime=false
   enableSourceMaps = true
   configOptions = [:] //useful for custom config on extension libraries
 
