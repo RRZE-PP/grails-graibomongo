@@ -46,11 +46,11 @@ class CmeditorTagLib {
 
 	def block = { attrs, body ->
 		def presets = (attrs.presets ?: []) + (attrs.preset ? [attrs.preset] : []) + loadDefaultPresets()
-		out << render(template: "mongoBrowser", model: [windowMode: "resizable", presets: presets])
+		out << render(template: "/mongoBrowser", model: [windowMode: "resizable", presets: presets])
 	}
 
 	def window = { attrs, body ->
 		def presets = (attrs.presets ?: []) + (attrs.preset ? [attrs.preset] : []) + loadDefaultPresets()
-		out << render(template: "mongoBrowser", model: [windowMode: "moveable", presets: presets])
+		out << render(template: "/mongoBrowser", model: [windowMode: "moveable", presets: presets])
 	}
 }
