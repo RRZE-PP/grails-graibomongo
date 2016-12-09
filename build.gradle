@@ -79,6 +79,6 @@ grailsPublish {
     portalPassword = ""
 }
 
-assets {
-    packagePlugin = true
-}
+//assets {
+//    packagePlugin = true
+//}

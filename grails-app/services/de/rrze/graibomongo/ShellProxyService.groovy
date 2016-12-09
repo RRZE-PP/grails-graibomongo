@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class CacheFullException extends Exception {}
 
 class ShellProxyService {
-	private static def configHolder = grails.util.Holders.grailsApplication.config
+	private static def configHolder = grails.util.Holders.config
 	private static final int CLIENT_EXPIRATION_S = configHolder?.graibomongo?.clientExpiration ?: 8*60*60
 	private static final int CONNECT_TIMEOUT = configHolder?.graibomongo?.connectTimeout ?: 3000
 	private static final int SOCKET_TIMEOUT = configHolder?.graibomongo?.socketTimeout ?: 60000

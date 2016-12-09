@@ -1,10 +1,10 @@
 package grails.graibomongo
 
-import grails.boot.*
+import grails.boot.GrailsApp
 import grails.boot.config.GrailsAutoConfiguration
 
-class Application extends GrailsAutoConfiguration implements GrailsPluginApplication {
-    static void main(String[] args) {
-        GrailsApp.run(Application, args)
-    }
+class Application extends GrailsAutoConfiguration {
+	static void main(String[] args) {
+		GrailsApp.run(Application, args)
+	}
 }
