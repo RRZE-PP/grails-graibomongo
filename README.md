@@ -8,8 +8,11 @@ non-javascript part of the Node.js mongo shell. Thus in its shell you can do
 almost anything you could do in the mongo shell.
 
 # Usage
-## Taglib
 
+## Standalone
+The plugin can be run as a standalone app offering a sample application.
+
+## Taglib
 Simply include the plugin and use its taglib.
 
 ```html
@@ -37,6 +40,11 @@ concatenated):
         new ConnectionPreset("dev-gsp-withAuth", "localhost").auth("root", "root", "admin", ConnectionPreset.Method.MONGODB_CR),
         new ConnectionPreset("dev-gsp-withoth", "localhost")]}"/>
 ```
+
+There are issues with the mongodb java driver as grails ships it's own (possibly outdated)
+version of it. If you get errors stating that the class `org.mongodb.MongoClient` or similar
+include `compile "org.mongodb:mongo-java-driver:3.2.2"` (or newer) in your parent application's
+dependencies. Even though the plugin requests this version it is not always served it.
 
 ## Connection Presets
 ### In a GSP
