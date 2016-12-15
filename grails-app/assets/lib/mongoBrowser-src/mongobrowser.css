@@ -387,6 +387,7 @@
 		background: #494c4e;
 		font-family: monospace;
 		min-height: 150px;
+		white-space: pre-wrap;
 	}
 
 /* Status bar
@@ -584,6 +585,10 @@
 		content: '⊟';
 		visibility: visible;
 		font-size:15px;
+	}
+
+	.mongoBrowser li.collection .foldIcon::before {
+		visibility: hidden;
 	}
 
 	.mongoBrowser textarea.userInput,

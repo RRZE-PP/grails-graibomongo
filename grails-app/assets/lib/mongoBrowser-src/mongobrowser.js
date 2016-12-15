@@ -37,6 +37,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {MongoBrowser~options} options       - an object to get the options from
 	 */
 	function MongoBrowser(appendTo, options){
+MongoNS.initServerConnection("http://localhost:8080/shell/initCursor","http://localhost:8080/shell/requestMore","http://localhost:8080/shell/runCommand")
 		//allow the user to omit new
 		if (!(this instanceof MongoBrowser))
 			return new MongoBrowser(appendTo, options);
@@ -460,7 +461,12 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			self.state.connections.push(db.getMongo());
 
 			var mongo = db.getMongo();
-			var databases = mongo.getDBNames();
+			try {
+				var databases = mongo.getDBNames();
+			}catch(e){
+				// we probably do not have permissions to do this. continue with only the database we authenticated upon
+				var databases = [db];
+			}
 			var listItem = $('<li class="collapsed"><span class="foldIcon">&nbsp;</span><span class="icon">&nbsp;</span><span class="listItem"></span><div class="selectionIndicator"></div></li>');
 
 			var serverItem = listItem.clone().addClass("server");
@@ -564,6 +570,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	MongoBrowser.prototype.connect             = function(){Array.prototype.unshift.call(arguments, this); return connect.apply(this, arguments)};
 	MongoBrowser.prototype.closeConnection     = function(){Array.prototype.unshift.call(arguments, this); return closeConnection.apply(this, arguments)};
 	MongoBrowser.prototype.option              = function(){Array.prototype.unshift.call(arguments, this); return option.apply(this, arguments)};
+	MongoBrowser.prototype.openDialog          = function(){Array.prototype.unshift.call(arguments, this); return openDialog.apply(this, arguments)};
 
 	//Import dependencies
 	if(typeof MongoBrowserNS === "undefined")

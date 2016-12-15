@@ -40,6 +40,7 @@ function jsObjectToJSObjectWithBsonValues(object){
 			case "$regex": return new RegExp(obj["$regex"], obj["$options"]);
 			case "$undefined": return undefined;
 			case "$date": return new Date(obj["$date"])
+			case "$timestamp": return new Timestamp(obj["$timestamp"]["t"], obj["$timestamp"]["i"])
 			default: return obj;
 		}
 	}
@@ -55,9 +56,9 @@ function jsObjectToJSObjectWithBsonValues(object){
 			case "$minKey":
 			case "$date":
 			case "$undefined":
-			case "$regex": return true;
+			case "$regex":
+			case "$timestamp": return true;
 			case "$binary":
-			case "$timestamp":
 			case "$ref": throw new Error("This datatype is not yet supported: " + Object.keys(obj)[0]);
 			default: return false;
 		}
@@ -79,7 +80,7 @@ function jsObjectToJSObjectWithBsonValues(object){
 //To port:
 //     Binary
 // x   Date
-// x   Timestamp
+// x x Timestamp
 //   x Regular_expression
 // x x OID
 //     DB Reference
@@ -117,4 +118,8 @@ RegExp.prototype.toJSON = function(){
 
 Date.prototype.toJSON = function() {
 	return { "$date": this.toISOString() };
+}
+
+Timestamp.prototype.toJSON = function() {
+	return { "$timestamp": { "t": this.low_, "i": this.high_ } };
 }

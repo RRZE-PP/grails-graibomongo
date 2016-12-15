@@ -18,18 +18,18 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
 	 * @param {MongoNS.DB} database - the database to which db should equate in this tab
 	 * @param {string} collection - the default collection to use
-	 * @param {MongoBrowser~options} options - the default options which were passed to the instantiating mongobrowser
+	 * @param {MongoBrowser} options - the instantiating mongobrowser
 	 */
-	function ConnectionTab(prefix, dummyLink, dummyTab, database, collection, options){
+	function ConnectionTab(prefix, dummyLink, dummyTab, database, collection, mongoBrowser){
 		this.uiElements = {};
 		this.state = {};
-		this.options = options;
+		this.options = mongoBrowser.options;
 
 		var link = this.uiElements.link = dummyLink.clone();
 		var tab = this.uiElements.tab = dummyTab.clone();
 		var id = prefix+"_"+ConnectionTab.instances++;
 		var connection = database.getMongo().host.substr(0, database.getMongo().host.indexOf("/"));
-		var defaultPrompt = "db.getCollection(\""+collection+"\").find({})";
+		var defaultPrompt = "db.getCollection(\"" + collection.replace("\\", "\\\\").replace("\"", "\\\"") + "\").find({})";
 
 		link.find("a").attr("href", "#"+id);
 		tab.attr('id', id);
@@ -81,6 +81,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 		this.state.collection = collection;
 		this.state.displayedResult = [];
 		this.state.codeMirror = codeMirror;
+		this.state.mongoBrowser = mongoBrowser;
 
 	}
 
@@ -237,14 +238,27 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 		self.state.displayedResult = [];
 		try {
-			for(var i=0; i < count && cursor.hasNext(); i++){
+			var t0 = performance.now();
+			var totalLines = 0;
+	 		for(var i=0; i < count && cursor.hasNext(); i++){
 				var val = cursor.next();
 				self.state.displayedResult.push(val);
 				var displayedKey = "(" + (i + 1) + ")";
 				if(val._id instanceof MongoNS.ObjectId)
 					displayedKey += " " + val._id.toString();
-				var lines = printLine(self, "", displayedKey, val, 0);
+				var lines = printDocument(self, "", displayedKey, val, 0);
 				lines.attr("data-index", i);
+				totalLines += lines.size()
+
+				var t1 = performance.now();
+
+				if(t1 - t0 > 500 * (i+1) || totalLines/(i+1) > 12000) {
+					self.state.mongoBrowser.openDialog("showMessage", "Warning", "The documents contain an unusual amount of properties. This results in \
+						performance problems and possibly errors. Therefore only " + (i + 1) + " documents were printed, even though more might have \
+						been fetched." , "error");
+					self.uiElements.iterate.max.val(i + 1);
+					break;
+				}
 			}
 			self.state.currentCursor = cursor;
 		}catch(e) {
@@ -253,7 +267,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	}
 
 	/**
-	 * Prints a line to the results table. A line represents an object or primitive object.
+	 * Prints a document to the results table. A document represents an object or primitive object.
 	 *
 	 * @param {ConnectionTab} self - as this is a private member <i>this</i> is passed as <i>self</i> explicitly
 	 * @param {string} key - the key in the parent object or array
@@ -263,115 +277,130 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @private
 	 * @memberof MongoBrowser(NS)~
 	 */
-	function printLine(self, key, displayedKey, val, indent) {
-		function base_print(indent, image, alt, col1, col2, col3, hasChildren, key) {
-			var newLine = $("<tr data-indent='" + indent + "' data-key='" + key + "' class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
-				style='"+ (indent > 0 ? "display:none" : "") + "'> \
-				<td><span class='foldIcon'>&nbsp;</span> \
-					<img src='" + self.options.assetPrefix + "assets/images/" + image + "' class='typeIcon' alt='" + alt + "' /> " +
-					col1 +
-				"</td> \
-				<td>" + col2 + "</td> \
-				<td>" + col3 + "</td></tr>");
-			newLine.appendTo(self.uiElements.results);
-			return newLine;
-		}
 
-		function printObject(key, displayedKey, val, indent) {
-			var keys = Object.keys(val);
+	function printDocument(self, key, displayedKey, val, indent) {
+		//create string because creating dom elements is really slow for huge data sets
+		var lineString = createLine(self, key, displayedKey, val, indent);
+		var lineDOM = $(lineString);
+		lineDOM.appendTo(self.uiElements.resultsTable);
+		return lineDOM;
 
-			var ret = base_print(indent, "bson_object_16x16.png", "object", displayedKey, "{ " + keys.length + " fields }", "Object", keys.length !== 0, key);
-
-			for(var i=0; i<keys.length; i++){
-				var newLine = printLine(self, keys[i], keys[i], val[keys[i]], indent + 1);
-				ret = ret.add(newLine);
-			}
-			return ret;
-		}
-
-		function printArray(key, displayedKey, val, indent) {
-			var keys = Object.keys(val);
-
-			var ret = base_print(indent, "bson_array_16x16.png", "array", displayedKey, "[ " + val.length + " Elements ]", "Array", keys.length !== 0, key);
-
-			for(var i=0; i<keys.length; i++){
-				var newLine = printLine(self, keys[i], "[" + keys[i] + "]", val[keys[i]], indent + 1);
-				ret = ret.add(newLine);
+		function createLine(self, key, displayedKey, val, indent) {
+			function base_print(indent, image, alt, col1, col2, col3, hasChildren, key) {
+				var newLine = "<tr data-indent='" + indent + "' \
+									data-key='" + key.replace("'", "&#39;") + "' \
+									class='collapsed " + (hasChildren ? "hasChildren" : "") + "' \
+					style='"+ (indent > 0 ? "display:none" : "") + "'> \
+					<td><span class='foldIcon'>&nbsp;</span> \
+						<img src='" + self.options.assetPrefix + "assets/images/" + image + "' \
+							class='typeIcon' alt='" + alt + "' /> " + col1.replace("<", "&lt") + "</td> \
+					<td>" + col2.toString().replace("<", "&lt;") + "</td> \
+					<td>" + col3.toString().replace("<", "&lt;") + "</td></tr>";
+				return newLine;
 			}
 
-			return ret;
-		}
+			function printObject(key, displayedKey, val, indent) {
+				var keys = Object.keys(val);
 
-		function printObjectId(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "oid", displayedKey, val.toString(), "ObjectId", false, key);
-		}
+				var ret = base_print(indent, "bson_object_16x16.png", "object", displayedKey, "{ " + keys.length + " fields }", "Object", keys.length !== 0, key);
 
-		function printRegExp(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "regex", displayedKey, val.toString(), "Regular Expression", false, key);
-		}
+				for(var i=0; i<keys.length; i++){
+					var newLine = createLine(self, keys[i], keys[i], val[keys[i]], indent + 1);
+					ret = ret + newLine;
+				}
+				return ret;
+			}
 
-		function printDate(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_datetime_16x16.png", "date", displayedKey, val.toString(), "Date", false, key);
-		}
+			function printArray(key, displayedKey, val, indent) {
+				var keys = Object.keys(val);
 
-		function printString(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_string_16x16.png", "string", displayedKey, val, "String", false, key);
-		}
+				var ret = base_print(indent, "bson_array_16x16.png", "array", displayedKey, "[ " + val.length + " Elements ]", "Array", keys.length !== 0, key);
 
-		function printDouble(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_double_16x16.png", "double", displayedKey, val, "Double", false, key);
-		}
+				for(var i=0; i<keys.length; i++){
+					var newLine = createLine(self, keys[i], "[" + keys[i] + "]", val[keys[i]], indent + 1);
+					ret = ret + newLine;
+				}
 
-		function printInt(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_integer_16x16.png", "int", displayedKey, val, "Int32", false, key);
-		}
+				return ret;
+			}
 
-		function printLong(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_integer_16x16.png", "long", displayedKey, val.toString(), "Int64", false, key);
-		}
+			function printObjectId(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_unsupported_16x16.png", "oid", displayedKey, val.toString(), "ObjectId", false, key);
+			}
 
-		function printBoolean(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_bool_16x16.png", "boolean", displayedKey, val, "Boolean", false, key);
-		}
+			function printRegExp(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_unsupported_16x16.png", "regex", displayedKey, val.toString(), "Regular Expression", false, key);
+			}
 
-		function printNull(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_null_16x16.png", "null", displayedKey, "null", "Null", false, key);
-		}
+			function printDate(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_datetime_16x16.png", "date", displayedKey, val.toString(), "Date", false, key);
+			}
 
-		function printUndefined(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "undefined", displayedKey, "undefined", "Undefined", false, key);
-		}
+			function printTimestamp(key, displayedKey, val, indent){
+				return base_print(indent, "bson_datetime_16x16.png", "timestamp", displayedKey, val.toDateString(), "Timestamp", false, key);
+			}
 
-		function printUnsupported(key, displayedKey, val, indent) {
-			return base_print(indent, "bson_unsupported_16x16.png", "unsupported", displayedKey, "", "unsupported", false, key);
-		}
+			function printString(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_string_16x16.png", "string", displayedKey, val, "String", false, key);
+			}
 
-		if(val instanceof Array)
-			return printArray(key, displayedKey, val, indent);
-		else if(val instanceof MongoNS.ObjectId)
-			return printObjectId(key, displayedKey, val, indent);
-		else if(val instanceof MongoNS.NumberLong)
-			return printLong(key, displayedKey, val, indent);
-		else if(val instanceof RegExp)
-			return printRegExp(key, displayedKey, val, indent);
-		else if(val instanceof Date)
-			return printDate(key, displayedKey, val, indent);
-		else if(typeof val === "string" || val instanceof String)
-			return printString(key, displayedKey, val, indent);
-		else if((typeof val === "number" || val instanceof Number) && parseInt(val) === val)
-			return printInt(key, displayedKey, val, indent);
-		else if(typeof val === "number" || val instanceof Number)
-			return printDouble(key, displayedKey, val, indent);
-		else if(typeof val === "boolean")
-			return printBoolean(key, displayedKey, val, indent);
-		else if(val === null) //TODO: Int vs Double!
-			return printNull(key, displayedKey, val, indent);
-		else if(typeof val === "undefined")
-			return printUndefined(key, displayedKey, val, indent);
-		else if(typeof val === "object") //this comes last after all others have been ruled out
-			return printObject(key, displayedKey, val, indent);
-		else
-			return printUnsupported(key, displayedKey, val, indent); //should not happen
+			function printDouble(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_double_16x16.png", "double", displayedKey, val, "Double", false, key);
+			}
+
+			function printInt(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_integer_16x16.png", "int", displayedKey, val, "Int32", false, key);
+			}
+
+			function printLong(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_integer_16x16.png", "long", displayedKey, val.toString(), "Int64", false, key);
+			}
+
+			function printBoolean(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_bool_16x16.png", "boolean", displayedKey, val, "Boolean", false, key);
+			}
+
+			function printNull(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_null_16x16.png", "null", displayedKey, "null", "Null", false, key);
+			}
+
+			function printUndefined(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_unsupported_16x16.png", "undefined", displayedKey, "undefined", "Undefined", false, key);
+			}
+
+			function printUnsupported(key, displayedKey, val, indent) {
+				return base_print(indent, "bson_unsupported_16x16.png", "unsupported", displayedKey, "", "unsupported", false, key);
+			}
+
+			if(val instanceof Array)
+				return printArray(key, displayedKey, val, indent);
+			else if(val instanceof MongoNS.ObjectId)
+				return printObjectId(key, displayedKey, val, indent);
+			else if(val instanceof MongoNS.NumberLong)
+				return printLong(key, displayedKey, val, indent);
+			else if(val instanceof RegExp)
+				return printRegExp(key, displayedKey, val, indent);
+			else if(val instanceof Date)
+				return printDate(key, displayedKey, val, indent);
+			else if(val instanceof MongoNS.Timestamp)
+				return printTimestamp(key, displayedKey, val, indent);
+			else if(typeof val === "string" || val instanceof String)
+				return printString(key, displayedKey, val, indent);
+			else if((typeof val === "number" || val instanceof Number) && parseInt(val) === val)
+				return printInt(key, displayedKey, val, indent);
+			else if(typeof val === "number" || val instanceof Number)
+				return printDouble(key, displayedKey, val, indent);
+			else if(typeof val === "boolean")
+				return printBoolean(key, displayedKey, val, indent);
+			else if(val === null) //TODO: Int vs Double!
+				return printNull(key, displayedKey, val, indent);
+			else if(typeof val === "undefined")
+				return printUndefined(key, displayedKey, val, indent);
+			else if(typeof val === "object") //this comes last after all others have been ruled out
+				return printObject(key, displayedKey, val, indent);
+			else
+				return printUnsupported(key, displayedKey, val, indent); //should not happen
+		}
 	}
 
 	/**
@@ -539,13 +568,13 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {JQuery} dummyLink - a jQuery wrapped <tt>HTMLElement</tt> (LI) to append as tab handle. Must
 	 *                             contain a .tabText to put the tab title in
 	 * @param {JQuery} dummyTab - a jQuery wrapped <tt>HTMLElement</tt> to append as tab content
-	 * @param {MongoBrowser~options} options - the default options which were passed to the instantiating mongobrowser
+	 * @param {MongoBrowser~options} options - the instantiating mongobrowser
 	 */
-	function TabFactory(dummyLink, dummyTab, options){
+	function TabFactory(dummyLink, dummyTab, mongoBrowser){
 		this.prefix = "tabs"+TabFactory.instances++;
 		this.dummyLink = dummyLink;
 		this.dummyTab = dummyTab;
-		this.options = options;
+		this.mongoBrowser = mongoBrowser;
 	}
 
 	/** The total number of factories created to savely create unique IDs
@@ -565,7 +594,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @returns {ConnectionTab} the constructed ConnectionTab
 	 */
 	TabFactory.prototype.newTab = function(database, collection){
-		return new ConnectionTab(this.prefix, this.dummyLink, this.dummyTab, database, collection, this.options);
+		return new ConnectionTab(this.prefix, this.dummyLink, this.dummyTab, database, collection, this.mongoBrowser);
 	}
 
 

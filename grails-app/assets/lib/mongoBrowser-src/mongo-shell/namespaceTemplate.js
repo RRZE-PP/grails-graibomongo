@@ -112,6 +112,7 @@ var MongoNS = (function(){
 		execute: execute,
 		ObjectId: ObjectId,
 		NumberLong: NumberLong,
+		Timestamp: Timestamp,
 		tojson: tojson,
 		WriteResult: WriteResult,
 		mongoDBHintAdapter: mongoDBHintAdapter,

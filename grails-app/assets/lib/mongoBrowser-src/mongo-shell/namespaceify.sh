@@ -50,6 +50,7 @@ echo "// ---- MODULE: servers ---- " >> "$FILENAME";       cat servers.js >> "$F
 echo "// ---- MODULE: servers_misc ---- " >> "$FILENAME";  cat servers_misc.js >> "$FILENAME";  echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: shardingtest ---- " >> "$FILENAME";  cat shardingtest.js >> "$FILENAME";  echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: types ---- " >> "$FILENAME";         cat types.js >> "$FILENAME";         echo -e "\n\n" >> "$FILENAME"
+echo "// ---- MODULE: port_types ---- " >> "$FILENAME";    cat port_types.js >> "$FILENAME";    echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: upgrade_check ---- " >> "$FILENAME"; cat upgrade_check.js >> "$FILENAME"; echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: utils_auth ---- " >> "$FILENAME";    cat utils_auth.js >> "$FILENAME";    echo -e "\n\n" >> "$FILENAME"
 echo "// ---- MODULE: utils ---- " >> "$FILENAME";         cat utils.js >> "$FILENAME";         echo -e "\n\n" >> "$FILENAME"

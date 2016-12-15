@@ -5856,6 +5856,7 @@ function jsObjectToJSObjectWithBsonValues(object){
 			case "$regex": return new RegExp(obj["$regex"], obj["$options"]);
 			case "$undefined": return undefined;
 			case "$date": return new Date(obj["$date"])
+			case "$timestamp": return new Timestamp(obj["$timestamp"]["t"], obj["$timestamp"]["i"])
 			default: return obj;
 		}
 	}
@@ -5871,9 +5872,9 @@ function jsObjectToJSObjectWithBsonValues(object){
 			case "$minKey":
 			case "$date":
 			case "$undefined":
-			case "$regex": return true;
+			case "$regex":
+			case "$timestamp": return true;
 			case "$binary":
-			case "$timestamp":
 			case "$ref": throw new Error("This datatype is not yet supported: " + Object.keys(obj)[0]);
 			default: return false;
 		}
@@ -5895,7 +5896,7 @@ function jsObjectToJSObjectWithBsonValues(object){
 //To port:
 //     Binary
 // x   Date
-// x   Timestamp
+// x x Timestamp
 //   x Regular_expression
 // x x OID
 //     DB Reference
@@ -5933,6 +5934,10 @@ RegExp.prototype.toJSON = function(){
 
 Date.prototype.toJSON = function() {
 	return { "$date": this.toISOString() };
+}
+
+Timestamp.prototype.toJSON = function() {
+	return { "$timestamp": { "t": this.low_, "i": this.high_ } };
 }
 
 
@@ -19839,6 +19844,26 @@ isObject = function(x) {
 
 
 
+// ---- MODULE: port_types ---- 
+
+Timestamp.prototype.toDateString = function(){
+	return new Date(this.low_ * 1000).toString();
+}
+
+Timestamp.prototype.toString = function() {
+	return "Timestamp(" + this.low_ + ", " + this.high_ + ")"
+}
+
+Timestamp.prototype.getTime = function() {
+    return this.low_;
+};
+
+Timestamp.prototype.getInc = function() {
+    return this.high_;
+};
+
+
+
 // ---- MODULE: upgrade_check ---- 
 (function() {
     "use strict";
@@ -22661,6 +22686,7 @@ mongoDBHintAdapter.async = true;
 		execute: execute,
 		ObjectId: ObjectId,
 		NumberLong: NumberLong,
+		Timestamp: Timestamp,
 		tojson: tojson,
 		WriteResult: WriteResult,
 		mongoDBHintAdapter: mongoDBHintAdapter,

@@ -50,7 +50,7 @@
 	<script>
 	m = MongoBrowser($("body")[0],
 		{connectionPresets: [ {name: "withauth",
-								 host: "faui00q",
+								 host: "localhost",
 								  port: 27017,
 								  performAuth: true,
 								  auth: {
@@ -60,7 +60,7 @@
 								  	method: "scram-sha-1"
 								  }},
 								{name: "without",
-								 host: "faui00q",
+								 host: "localhost",
 								  port: 27017,
 								  performAuth: false,
 								  auth: {
