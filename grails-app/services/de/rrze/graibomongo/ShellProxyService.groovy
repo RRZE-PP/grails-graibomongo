@@ -30,13 +30,13 @@ class ShellProxyService {
 	private static final int MAX_CACHED_CURSORS = configHolder?.graibomongo?.maxCachedCursors ?: MAX_CACHED_CLIENTS * 500
 	private static final float PRUNE_AT_PERCENTAGE = configHolder?.graibomongo?.pruneAtPercentage ?: 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
 
-	private static cursors = [:]
-	private static clients = [:]
+	private static cursors = [:]                //(host, port, cursorId) => cursor
+	private static clients = [:]                //(serverAddress, authenticationList, mongoClientOptions) => client
 	private static SortedMap<Long, ArrayList<String>> cursorsCreatedPerSecond =
 	                    new TreeMap<Long, ArrayList<String>>() //allows easy search for possibly too old cursors
-	private static lastUsageOfCursor = [:]
-	private static clientOfCursor = [:]
-	private static openCursorsPerClient = [:]
+	private static lastUsageOfCursor = [:]      //cursor => long (seconds)
+	private static clientOfCursor = [:]         //cursor => client
+	private static openCursorsPerClient = [:]   //client => cursor[]
 
 	private static Object ageLock = new Object()
 	private static final int PRUNE_AT_CLIENT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
