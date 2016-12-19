@@ -31,6 +31,9 @@ class ShellProxyService {
 	private static final int MAX_CACHED_CURSORS = configHolder?.graibomongo?.maxCachedCursors ?: MAX_CACHED_CLIENTS * 500
 	private static final float PRUNE_AT_PERCENTAGE = configHolder?.graibomongo?.pruneAtPercentage ?: 80 //when N percent of MAX_CACHED_CLIENTS have been cached, clear old clients
 
+
+	//TODO: The following structures could mostly be replaced by a wrapper class around cursor and client which reference
+	//their respective counterpart
 	private static cursors = [:]                //(host, port, cursorId) => cursor
 	private static clients = [:]                //(serverAddress, authenticationList, mongoClientOptions) => client
 	private static SortedMap<Long, ArrayList<String>> cursorsCreatedPerSecond =
@@ -394,14 +397,13 @@ class ShellProxyService {
 	 *
 	 * @param connection the connection to which the cursor belongs
 	 * @param cursor the cursor which is obsolete
+	 * @param cursorKey this cursor's key
 	 */
-	private def doneWithLoadedCursor(ConnectionData connection, MongoCursor cursor){
-		def cursorKey = connection.hostname + connection.port + cursor.getServerCursor().getId()
-
+	private def doneWithLoadedCursor(ConnectionData connection, MongoCursor cursor, String cursorKey){
 		synchronized(ageLock){
 			cursors.remove(cursorKey)
 			lastUsageOfCursor.remove(cursor)
-			clientOfCursor[cursor].decrementAndGet()
+			openCursorsPerClient[clientOfCursor[cursor]].decrementAndGet()
 			clientOfCursor.remove(cursor)
 		}
 
