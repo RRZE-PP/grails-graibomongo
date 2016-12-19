@@ -12,8 +12,8 @@ buildscript {
     }
 }
 
-version "0.1"
-group "grails.graibomongo"
+version "0.2"
+group "de.rrze"
 
 apply plugin:"eclipse"
 apply plugin:"idea"
