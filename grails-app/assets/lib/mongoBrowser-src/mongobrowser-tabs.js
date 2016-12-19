@@ -200,7 +200,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 					printBatch(self, result, result.objsLeftInBatch());
 				}else{
 					self.state.displayedResult = [result];
-					printLine(self, "", "(" + 1 + ")", result, 0).attr("data-index", 0);
+					printDocument(self, "", "(" + 1 + ")", result, 0).attr("data-index", 0);
 				}
 				if(self.options.expandFirstDoc)
 					self.uiElements.results.children().eq(0).trigger("dblclick"); //expand the first element
@@ -556,7 +556,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			var displayedKey = "(" + (i + 1) + ")";
 			if(val._id instanceof MongoNS.ObjectId)
 				displayedKey += " " + val._id.toString();
-			var lines = printLine(this, "", displayedKey, val, 0);
+			var lines = printDocument(this, "", displayedKey, val, 0);
 			lines.attr("data-index", i);
 		}
 	}
