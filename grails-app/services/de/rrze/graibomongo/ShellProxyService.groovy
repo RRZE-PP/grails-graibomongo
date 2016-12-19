@@ -17,6 +17,7 @@ import org.bson.BsonDocument
 
 import java.util.TreeMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 class CacheFullException extends Exception {}
 
@@ -37,6 +38,12 @@ class ShellProxyService {
 	private static lastUsageOfCursor = [:]      //cursor => long (seconds)
 	private static clientOfCursor = [:]         //cursor => client
 	private static openCursorsPerClient = [:]   //client => cursor[]
+
+	/* sometimes no server cursor is created with the java driver and we need to fill in our own cursorId
+	 * cursorIds are always positive judgin from CursorId CursorManager::_allocateCursorId_inlock() in the mongodb sources
+	 * therefore we can safely give out negative IDs hoping that this has no currently unknown side effects
+	 */
+	private static AtomicLong currentCursorId = new AtomicLong(-1)
 
 	private static Object ageLock = new Object()
 	private static final int PRUNE_AT_CLIENT_COUNT = MAX_CACHED_CLIENTS * PRUNE_AT_PERCENTAGE / 100
@@ -138,6 +145,11 @@ class ShellProxyService {
 			if(!isFindOne && scursor != null){
 				cursorId = scursor.getId()
 				storeCursor(conn, mongoClient, cursor)
+			}else if(!isFindOne && cursor.hasNext() && scursor == null){
+				//for whatever reason the java driver has no server cursor but there are still results left
+				//=> we set our own cursorId (see above!)
+				cursorId = currentCursorId.decrementAndGet()
+				storeCursor(conn, mongoClient, cursor, cursorId)
 			}else{
 				cursor.close()
 				doneWithClient(mongoClient)
@@ -191,8 +203,9 @@ class ShellProxyService {
 				}
 			}
 
-			if(cursor.getServerCursor() == null){
-				doneWithLoadedCursor(conn, cursor)
+			if(!cursor.hasNext()){
+				def cursorKey = conn.hostname + conn.port + cursorId
+				doneWithLoadedCursor(conn, cursor, cursorKey)
 				cursor.close()
 				cursorId = 0
 			}
@@ -330,9 +343,10 @@ class ShellProxyService {
 	 * @param connection the connection to which this client and cursor belong
 	 * @param mongoClient the client to store
 	 * @param cursor the cursor to store
+	 * @param cursorId the cursor id to use or null when to infer from the cursor's servercursor
 	 */
-	private def storeCursor(ConnectionData connection, MongoClient mongoClient, MongoCursor cursor){
-		def cursorKey = connection.hostname + connection.port + cursor.getServerCursor().getId()
+	private def storeCursor(ConnectionData connection, MongoClient mongoClient, MongoCursor cursor, Long cursorId = null){
+		def cursorKey = connection.hostname + connection.port + (cursorId ?: cursor.getServerCursor().getId())
 		def curTime = System.currentTimeMillis()/1000
 
 		synchronized(ageLock){
