@@ -133,7 +133,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 						return;
 					var idx = parseInt(curLine.attr("data-connectionIndex"));
 					var preset= self.state.connectionPresets[idx];
-					return self.connect(preset.host, preset.port, "test", //todo put correct database here
+					return self.connect(preset.host, preset.port, (preset.performAuth ? preset.auth.adminDatabase : "test"),
 						preset.performAuth, preset.auth.adminDatabase, preset.auth.username,
 						preset.auth.password, preset.auth.method, preset.auth.connectionId)
 
@@ -254,8 +254,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 				var method = curDialog.find("[name=method]").val();
 				var performAuth = curDialog.find("[name=performAuth]").prop("checked");
 
-				//todo: change test here, too!
-				var testResult = testConnection(self, host, port, "test", performAuth, adminDatabase, username, password, method);
+				var testResult = testConnection(self, host, port, (preset.performAuth ? preset.auth.adminDatabase : "test"),
+				                                  performAuth, adminDatabase, username, password, method);
 				if(testResult !== true){
 					openDialog(self, "showMessage", "Test failed", testResult, "error");
 				}else{

@@ -37,7 +37,6 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	 * @param {MongoBrowser~options} options       - an object to get the options from
 	 */
 	function MongoBrowser(appendTo, options){
-MongoNS.initServerConnection("http://localhost:8080/shell/initCursor","http://localhost:8080/shell/requestMore","http://localhost:8080/shell/runCommand")
 		//allow the user to omit new
 		if (!(this instanceof MongoBrowser))
 			return new MongoBrowser(appendTo, options);

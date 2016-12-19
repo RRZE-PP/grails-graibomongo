@@ -1,5 +1,5 @@
 <template id="MongoBrowserDummy">
-	<div style="width:1000px; border-radius:2px;padding:1px;border:2px solid #333; display:none"  tabindex="-1">
+	<div style="width:100%; border-radius:2px;padding:1px;border:2px solid #333; display:none; min-height: 550px;"  tabindex="-1">
 		<div style="" class="menuBar">
 			<span class="menuRootElem">File
 					<ul><li data-callback='openConnection'>Open Connection</li></ul>
