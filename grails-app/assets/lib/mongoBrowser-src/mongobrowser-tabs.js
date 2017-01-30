@@ -536,6 +536,15 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 	}
 
 	/**
+	 * Sets the prompt content of the tab
+	 * @method
+	 * @memberof ConnectionTab
+	 */
+	ConnectionTab.prototype.setPrompt = function(newText){
+		this.state.codeMirror.setValue(newText);
+	}
+
+	/**
 	 * Shows the hint in this tab's prompt
 	 * @method
 	 * @memberof ConnectionTab

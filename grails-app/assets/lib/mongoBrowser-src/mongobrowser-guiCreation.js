@@ -13,7 +13,7 @@
 window.MongoBrowserNS = (function(MongoBrowserNS){
 
 	//fetch private members of mongobrowser
-	function getGuiCommands(openDialog, getCurrentTab, testConnection){
+	function getGuiCommands(openDialog, getCurrentTab, testConnection, refreshConnection){
 
 		/**
 		 * Sets callbacks on the buttons in the actionBar and saves them
@@ -702,6 +702,12 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 							name: "Close this connection",
 							callback: function(){
 								self.closeConnection(self.rootElement.find(".server").index($(this).parent()))
+							}
+						},
+						refresh: {
+							name: "Refresh the collections list",
+							callback: function(){
+								refreshConnection(self, self.rootElement.find(".server").index($(this).parent()));
 							}
 						}
 					}
