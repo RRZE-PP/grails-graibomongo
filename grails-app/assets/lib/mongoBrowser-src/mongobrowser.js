@@ -478,7 +478,8 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 
 			databaseItems.append(systemItem);
 
-			serverItem.find(".listItem").text(hostname);
+			var serverText = username + (username !== ""?"@" : "") + hostname + " (" + database + ")";
+			serverItem.find(".listItem").text(serverText);
 			serverItem.append(databaseItems);
 
 			//here we will store all tab ids ever opened from this connection
@@ -542,7 +543,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 			self.uiElements.tabs.container.find("[aria-controls='" + tabId + "']").find(".closeButton").click();
 		}
 		self.uiElements.sideBar.find(".server").eq(connectionNumber).remove();
-		self.state.connections.splice(connectionNumber);
+		self.state.connections.splice(connectionNumber, 1);
 	}
 
 	function option(self, option, value){
