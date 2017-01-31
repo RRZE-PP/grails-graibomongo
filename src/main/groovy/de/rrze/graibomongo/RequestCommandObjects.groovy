@@ -129,7 +129,7 @@ class CursorInitRequest implements grails.validation.Validateable {
 		connection nullable: false, blank: false, validator: {val, obj -> val.validate()}
 		query nullable: false, blank: false
 		ns nullable: false, blank: false
-		nToReturn nullable: false, blank: false
+		// nToReturn nullable: false, blank: false //These validators are weirdly broken in current grails
 		fieldsToReturn nullable: false, blank: false
 	}
 }
@@ -160,6 +160,6 @@ class RequestMoreRequest implements grails.validation.Validateable {
 	static constraints = {
 		connection nullable: false, blank: false, validator: {val, obj -> val.validate()}
 		cursorId nullable: false, blank: false
-		nToReturn nullable: false, blank: false
+		// nToReturn nullable: false, blank: false //These validators are weirdly broken in current grails
 	}
 }
