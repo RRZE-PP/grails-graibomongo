@@ -411,7 +411,7 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 										var newName = prompt("Please enter a name for the new collection:");
 										if(newName){
 											try{
-												collection.copyTo(newName);
+												collection.aggregate([ { $match: {} }, { $out: newName } ]);
 											}catch(e){
 												if(e instanceof MongoNS.DatabaseConnectionError){
 													self.openDialog("showMessage", "Warning", "Could not execute: " + e);
@@ -445,6 +445,15 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 								})(mongo.getDB(databaseName).getCollection(collection))
 							},
 						"sep1": "---------",
+						"insertdoc": {
+								name: "Insert Document",
+								callback: (function(db, collection){
+									return function(){
+						            	openDialog(self, "insertDocument", db, collection);
+									}
+								})(mongo.getDB(databaseName), collection)
+							},
+						"sep2": "---------",
 						"statistics": {
 								name: "Statistics",
 								callback: (function(mongo, databaseName, collection){
@@ -470,7 +479,15 @@ window.MongoBrowserNS = (function(MongoBrowserNS){
 								return function(){
 									var newName = prompt("Please enter a name for the new collection:");
 									if(newName){
-										db.createCollection(newName);
+										try{
+											db.createCollection(newName);
+										}catch(e){
+											if(e instanceof MongoNS.DatabaseConnectionError){
+												self.openDialog("showMessage", "Warning", "Could not execute: " + e);
+											}else{
+												throw e;
+											}
+										}
 										refreshConnection(self, connectionNumber);
 									}
 								}
