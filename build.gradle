@@ -21,6 +21,7 @@ apply plugin:"org.grails.grails-plugin"
 apply plugin:"org.grails.grails-plugin-publish"
 apply plugin:"org.grails.grails-gsp"
 apply plugin:"asset-pipeline"
+//apply from:repo_publish_config
 
 ext {
     grailsVersion = project.grailsVersion
@@ -79,6 +80,7 @@ grailsPublish {
     portalPassword = ""
 }
 
-//assets {
-//    packagePlugin = true
-//}
+assets {
+    packagePlugin = true
+    //minifyJs = false
+}
